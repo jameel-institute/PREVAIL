@@ -556,24 +556,28 @@ Births[] <- if (reproductive_population[i] <= 0) 0 else if (simp_birth_death == 
 
 # 4. MATERNAL IMMUNITY CONTRIBUTIONS
 
-# Vaccinated mothers in reproductive age range (from vacc strata ≥ 2)
+# Vaccinated mothers in reproductive age range: never infected (S or E) and in a vaccinated stratum (≥ 2),
+# weighted by the share of the age group that is of reproductive age
 vaccinated_mums[] <- if (n_vacc <= 1 || i < repro_low || i > repro_high) 0 else
   max(sum(S[i, 2:n_vacc, ]) +
-        sum(E[i, 2:n_vacc, ]) +
-        sum(I[i, 2:n_vacc, ]) +
-        sum(R[i, 2:n_vacc, ]) +
-        sum(Is[i, 2:n_vacc, ]) +
-        sum(Rc[i, 2:n_vacc, ]), 0)
+        sum(E[i, 2:n_vacc, ]), 0) * repro_weight_now[i]
 
-# Naturally immune mothers
-antibody_mums[] <- max(sum(I[i, , ]) +
-                         sum(R[i, , ]) +
-                         sum(Is[i, , ]) +
-                         sum(Rc[i, , ]), 0)
+# Naturally immune mothers (infected now or in the past, whether or not vaccinated)
+antibody_mums[] <- if (i < repro_low || i > repro_high) 0 else
+  max(sum(I[i, , ]) +
+        sum(R[i, , ]) +
+        sum(Is[i, , ]) +
+        sum(Rc[i, , ]), 0) * repro_weight_now[i]
 
-# Proportion of newborns with maternal antibodies
-prop_maternal_vaccinated[] <- if (reproductive_population[i] <= 0) 0 else max(min(vaccinated_mums[i] / reproductive_population[i], 1), 0)
-prop_maternal_natural[] <- if (reproductive_population[i] <= 0) 0 else max(min(antibody_mums[i] / reproductive_population[i], 1), 0)
+# Proportion of newborns with maternal antibodies: mothers are anyone of reproductive age, so these are shares of
+# the whole reproductive population (they were indexed by age group, and read at the infant age group, where they
+# are always zero)
+prop_maternal_vaccinated <- if (sum(reproductive_population) <= 0) 0 else max(min(sum(vaccinated_mums) / sum(reproductive_population), 1), 0)
+prop_maternal_natural <- if (sum(reproductive_population) <= 0) 0 else max(min(sum(antibody_mums) / sum(reproductive_population), 1), 0)
+
+# Reduction in susceptibility of infants (age groups up to age_maternal_protection_ends) from maternal antibodies
+maternal_protection <- max(min(protection_weight_vacc * prop_maternal_vaccinated +
+                                 protection_weight_rec * prop_maternal_natural, 1), 0)
 
 # 5. VACCINATION COVERAGE
 
@@ -598,13 +602,9 @@ t_R0 <- interpolate(tt_R0, R0, "constant")
 beta[, , ] <- if (infectious_period[i, j, k] <= 0) 0 else
   (R0_modifier * t_R0) / infectious_period[i, j, k]
 
-# Adjusted beta based on age, vaccination, and maternal protection
-beta_updated[, , ] <- if (i <= age_maternal_protection_ends)
-  beta[i, j, k] *
-  (1 - age_vaccination_beta_modifier[i, j, k]) *
-  (1 - (protection_weight_vacc * prop_maternal_vaccinated[k] +
-          protection_weight_rec  * prop_maternal_natural[k])) else
-            beta[i, j, k] * (1 - age_vaccination_beta_modifier[i, j, k])
+# Adjusted beta (infectiousness) based on vaccination. Maternal protection reduces infants' susceptibility, so it is
+# applied in the force of infection below, not here
+beta_updated[, , ] <- beta[i, j, k] * (1 - age_vaccination_beta_modifier[i, j, k])
 
 # 7. FORCE OF INFECTION
 
@@ -621,8 +621,9 @@ lambda_contact[, ] <- if (Npop_age[j] <= 0) 0 else contact_matrix[i, j] * infect
 lambda_raw[] <- sum(lambda_contact[i, ])
 
 # Final FOI per age-vacc-risk stratum
-lambda[, , ] <- if (N <= 0) 0 else
-  max(0, lambda_raw[i]) * (1 - age_vaccination_beta_modifier[i, j, k])
+lambda[, , ] <- if (N <= 0) 0 else if (i <= age_maternal_protection_ends)
+  max(0, lambda_raw[i]) * (1 - age_vaccination_beta_modifier[i, j, k]) * (1 - maternal_protection) else
+    max(0, lambda_raw[i]) * (1 - age_vaccination_beta_modifier[i, j, k])
 
 # 8. Reff
 # The effective reproduction number is not calculated here: it is the dominant eigenvalue of the next generation
@@ -827,8 +828,6 @@ dim(repro_weight)     <- c(n_age, no_migration_changes)
 dim(repro_weight_now) <- n_age
 dim(vaccinated_mums) <- n_age
 dim(antibody_mums) <- n_age
-dim(prop_maternal_vaccinated) <- n_age
-dim(prop_maternal_natural) <- n_age
 
 # -- 12. TRANSITION POOLS FOR DERIVED COMPARTMENTS --
 dim(S_available)   <- c(n_age, n_vacc, n_risk)

@@ -58,3 +58,33 @@ test_that("long-term vaccine protection wanes to unvaccinated in every compartme
   # not back to the short-term stratum of dose 1, which has more protection than where they came from
   expect_equal(sum(s$S[, 3, 1]), 0)
 })
+
+test_that("maternal antibodies protect infants", {
+  p <- no_seeding(cached_params("PSE", "measles", 15))
+  p$vaccination_coverage[] <- 0
+  p$age_vaccination_beta_modifier[] <- 0
+  p$migration_in_number[] <- 0
+  N <- rowSums(p$S0[, , 1])
+  # children susceptible, everyone of reproductive age (and older) immune from past infection
+  adults <- seq_len(p$n_age) >= p$repro_low
+  p$S0[] <- 0
+  p$S0[!adults, 1, 1] <- N[!adults]
+  p$Rpop0[] <- 0
+  p$Rpop0[adults, 1, 1] <- N[adults]
+  p$I0[] <- 0
+  p$I0[!adults, 1, 1] <- 100
+  infant_infections <- function(weight_rec) {
+    p$protection_weight_rec <- weight_rec
+    p$protection_weight_vacc <- 0
+    sys <- dust2::dust_system_create(PREVAIL:::transmission_model(), p, n_particles = 1, deterministic = TRUE)
+    dust2::dust_system_set_state_initial(sys)
+    dust2::dust_system_run_to_time(sys, 1)
+    s <- dust2::dust_unpack_state(sys, dust2::dust_system_state(sys))
+    c(infants = sum(s$E[1, , ]), older = sum(s$E[2, , ]))
+  }
+  none <- infant_infections(0)
+  half <- infant_infections(0.5)
+  # all mothers immune, half protection: infants' risk halves and nobody else's changes
+  expect_equal(half[["infants"]] / none[["infants"]], 0.5, tolerance = 1e-6)
+  expect_equal(half[["older"]], none[["older"]])
+})

@@ -74,6 +74,12 @@ PREVAIL produces can be used directly, and fixes several problems in the model e
   as the model's comments describe. Before, S alone went from the long-term stratum of dose `d` to the short-term
   stratum of dose `d - 1`, which has more protection (measles 93% after 90%). This only matters where vaccine
   protection wanes (diphtheria and pertussis by default).
+* Maternal protection works. It was applied to the infectiousness of infants rather than their susceptibility, and
+  the share of mothers vaccinated or immune was read at the infant age group (always zero), so it did nothing. It
+  now reduces the force of infection on age groups up to `age_maternal_protection_ends` by
+  `protection_weight_vacc` times the share of women of reproductive age vaccinated and never infected, plus
+  `protection_weight_rec` times the share ever infected. For measles in five-year age groups that is up to about
+  15% off the 0-4s' force of infection (protection to 9 months, so 15% of the age group).
 
 ## New functions
 

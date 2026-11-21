@@ -8,4 +8,4 @@
 ^Meta$
 analysis/
 inst/extdata/data-raw
-inst/extdata/data-processed
+inst/extdata/data-processed^LICENSE\.md$

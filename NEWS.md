@@ -3,6 +3,9 @@
 This version rebuilds how the historical inputs (1950 to the present day) are made, so that the starting immunity
 PREVAIL produces can be used directly. The model equations are unchanged.
 
+* OJ Watson is now the maintainer; Arran Hamlet stays as an author and the package's original creator. Added the
+  MIT `LICENSE` file that DESCRIPTION already referred to.
+
 ## The reporting assumption is now an explicit option
 
 * New argument `transmission_history` in `data_load_process_wrapper()` and `custom_data_process_wrapper()`:

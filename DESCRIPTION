@@ -1,11 +1,16 @@
 Package: PREVAIL
 Title: PRojection of Epidemics and VAccination Impact under Lapses in Coverage
 Version: 0.2.0
-Authors@R: 
+Authors@R: c(
     person(given = "Arran", 
            family = "Hamlet", 
-           role = c("aut", "cre"), 
-           email = "arran.hamlet14@imperial.ac.uk")
+           role = "aut",
+           comment = "Original creator of PREVAIL"),
+    person(given = "Oliver J.",
+           family = "Watson",
+           role = c("aut", "cre"),
+           email = "o.watson15@imperial.ac.uk",
+           comment = c(ORCID = "0000-0003-2374-0741")))
 Description: 
     PREVAIL is an R package designed to support dynamic, adaptable, and comprehensive 
     transmission modeling for vaccine-preventable diseases (VPDs), particularly in crisis 
@@ -58,5 +63,6 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
-URL: https://arranhamlet.github.io/PREVAIL/
+URL: https://github.com/jameel-institute/PREVAIL
+BugReports: https://github.com/jameel-institute/PREVAIL/issues
 Config/testthat/edition: 3

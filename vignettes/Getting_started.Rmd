@@ -46,7 +46,7 @@ github using the function `install_github()` from the **devtools**
 package.
 
 ```{r, eval = FALSE}
-devtools::install_github("arranhamlet/PREVAIL")
+devtools::install_github("jameel-institute/PREVAIL")
 ```
 
 Once installed, we can load in the required packages for this vignette.

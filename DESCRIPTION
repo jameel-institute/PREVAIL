@@ -63,6 +63,6 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
-URL: https://github.com/jameel-institute/PREVAIL
+URL: https://jameel-institute.github.io/PREVAIL/, https://github.com/jameel-institute/PREVAIL
 BugReports: https://github.com/jameel-institute/PREVAIL/issues
 Config/testthat/edition: 3

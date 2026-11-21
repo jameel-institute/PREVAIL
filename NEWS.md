@@ -56,6 +56,7 @@ PREVAIL produces can be used directly, and fixes several problems in the model e
 * Seeded cases are placed by age in proportion to the population without random sampling, so the same inputs give
   the same parameters.
 * Windows binaries removed from `src/`.
+* The pkgdown site and repository links point at jameel-institute (`https://jameel-institute.github.io/PREVAIL/`).
 
 ## Model equations
 

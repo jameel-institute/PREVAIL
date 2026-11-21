@@ -72,13 +72,24 @@ expand_pre1980_vaccination <- function(processed_vaccination, vaccination_pre198
 #' @param demog_data Output list from `process_demography()`.
 #' @param processed_vaccination Data frame of routine vaccine coverage.
 #' @param processed_vaccination_sia Data frame of SIA coverage.
-#' @param processed_case WHO case reports processed for the country of interest.
+#' @param processed_case WHO case reports processed for the country of interest (years with cases).
 #' @param vaccination_schedule Full WHO vaccine schedule data frame.
 #' @param vaccination_pre1980 Data frame of historical vaccination introduction assumptions.
 #' @param vaccine_parameters Data frame of vaccination parameters.
+#' @param disease_parameters Data frame of disease parameters.
+#' @param WHO_seed_switch Retained for compatibility. `FALSE` is the same as `transmission_history = "endemic"`.
 #' @param custom_routine_vaccination Data frame or NA indicating custom routine vaccination.
 #' @param custom_sia_vaccination Data frame or NA indicating custom sia vaccination.
-#' @return A named list of parameters including coverage arrays and seeding inputs.
+#' @param disease Disease name. If `NULL` it is taken from the case data.
+#' @param R0 Basic reproduction number while transmission is on.
+#' @param processed_case_reports WHO case reports including years with zero cases. Defaults to `processed_case`.
+#' @param transmission_history,circulation_threshold,reporting_fraction,seed_floor Passed to
+#'   [build_transmission_history()].
+#' @param coverage_accuracy Multiplier on the odds of vaccination (see [coverage_to_daily_rate()]).
+#' @param vaccine_waning Passed to [resolve_vaccine_waning()].
+#'
+#' @return A named list of parameters including the routine coverage and dose ages, SIA coverage, protection and
+#'   waning by stratum, the time-varying R0 and the seeding inputs.
 #'
 #' @importFrom data.table data.table setDT rbindlist
 #' @importFrom stats setNames
@@ -92,18 +103,31 @@ case_vaccine_to_param <- function(
     vaccination_pre1980,
     vaccine_parameters,
     disease_parameters,
-    WHO_seed_switch,
+    WHO_seed_switch = TRUE,
     custom_routine_vaccination = NA,
-    custom_sia_vaccination = NA
+    custom_sia_vaccination = NA,
+    disease = NULL,
+    R0 = 1,
+    processed_case_reports = processed_case,
+    transmission_history = "circulating_years",
+    circulation_threshold = 2,
+    reporting_fraction = 1,
+    seed_floor = 10,
+    coverage_accuracy = 1,
+    vaccine_waning = "default"
 ) {
 
   iso <- demog_data$input_data$iso
   n_age <- demog_data$input_data$n_age
-  ages <- 0:(n_age - 1)
+  n_vacc <- demog_data$input_data$n_vacc
+  n_doses <- (n_vacc - 1) / 2
   years <- demog_data$input_data$year_start:demog_data$input_data$year_end
+  if (is.null(disease)) disease <- tolower(unique(processed_case$disease_description)[1])
+  custom_routine <- !all(is.na(custom_routine_vaccination))
 
   # Use data.table for combined extraction
   vaccination_sources <- c(
+    disease,
     processed_case$disease_description,
     processed_vaccination_sia$vaccination_name,
     processed_vaccination_sia$disease,
@@ -111,84 +135,60 @@ case_vaccine_to_param <- function(
     processed_vaccination$vaccine_description
   )
 
-  vaccination_type <- paste(unique(vaccination_sources), collapse = "|")
+  vaccination_type <- paste(unique(stats::na.omit(vaccination_sources)), collapse = "|")
 
   if (grepl("Diphtheria|Pertussis", vaccination_type, ignore.case = TRUE)) {
     vaccination_type <- paste0(vaccination_type, "|DTPCV1|DTPCV3|DTaP|DT|DTwP")
   }
 
   # Expand routine coverage pre-1980
-  if(all(is.na(custom_routine_vaccination))){
+  if (!custom_routine) {
     processed_vaccination <- expand_pre1980_vaccination(
-      processed_vaccination,
+      data.table::as.data.table(processed_vaccination),
+      # an introduction before the model starts counts as an introduction in its first year (in 0.1.0 such rows
+      # were dropped, leaving coverage at zero until the first WHO estimate in 1980)
       vaccination_pre1980 %>%
-        subset(introduction_year %in% demog_data$input_data$year_start:demog_data$input_data$year_end),
-      disease = tolower(unique(processed_case$disease_description)[1]),
+        dplyr::mutate(introduction_year = pmax(introduction_year, demog_data$input_data$year_start)) %>%
+        subset(introduction_year <= demog_data$input_data$year_end),
+      disease = disease,
       iso = iso
     )
   }
-  # Filter and build vaccination input
-  schedule <- filter_vaccine_schedule(vaccination_schedule, vaccination_type, iso)
-  routine_df <- build_routine_vaccination_param(processed_vaccination, schedule, ages, years)
 
-  #Correct for the routine data being recorded in %
-  if(all(is.na(custom_routine_vaccination))){
-    routine_df$value <- routine_df$value/100
+  # ---- Routine coverage and age by dose ----
+  schedule <- filter_vaccine_schedule(vaccination_schedule, vaccination_type, iso)
+  routine_coverage <- routine_dose_coverage(processed_vaccination, n_doses, years, percent = !custom_routine)
+  dose_ages <- routine_dose_ages(schedule, n_doses, years)
+
+  # custom routine data give the age of each dose directly
+  if (custom_routine && "age" %in% names(processed_vaccination)) {
+    pv <- as.data.frame(processed_vaccination)
+    for (d in seq_len(n_doses)) {
+      ages_d <- suppressWarnings(as.numeric(pv$age[pv$dose_order == d]))
+      if (length(ages_d) && any(!is.na(ages_d))) dose_ages[, d] <- min(ages_d, na.rm = TRUE)
+    }
   }
 
-  # Build SIA input if needed
-  sia_df <- if(nrow(processed_vaccination_sia) > 0) {
-    build_sia_vaccination_param(processed_vaccination_sia, ages, years)
+  # ---- Supplementary immunisation activities ----
+  sia <- if (nrow(processed_vaccination_sia) > 0) {
+    as.data.frame(processed_vaccination_sia)[, c("year", "age", "coverage")]
   } else {
     NULL
   }
 
-  # Combine and deduplicate
-  vacc_df <- combine_vaccination_params(routine_df, sia_df)
-  data.table::setDT(vacc_df)
+  # ---- Protection and waning by stratum ----
+  strata <- vaccine_strata_parameters(
+    vaccine_parameters = vaccine_parameters,
+    n_vacc = n_vacc,
+    vaccine_waning = resolve_vaccine_waning(vaccine_waning, disease)
+  )
 
-  zero_row <- rbind(data.table::data.table(dim1 = 1, dim2 = 1, dim3 = 1, dim4 = 0, year = 1950, value = 0))
-
-  vacc_df <- rbindlist(list(zero_row, vacc_df))
-  vacc_df <- vacc_df[, .(value = max(value)), by = .(dim1, dim2, dim3, dim4, year)]
-
-  # Build seeded case input
-  if (nrow(processed_case) > 0) {
-    case_df <- build_seeded_case_param(processed_case, demog_data, ages)
-    tt_seeded <- sort(c(0, match(unique(processed_case$year), years) - 1))
-  } else {
-    case_df <- data.table::data.table(dim1 = 1, dim2 = 1, dim3 = 1, dim4 = 1, value = 10)
-    tt_seeded <- 0
-  }
-
-  # ---- Build Age-Vaccination Modifier Structure ----
-  n_vacc <- demog_data$input_data$n_vacc
-  vacc_order <- seq(2, n_vacc, by = 2)
-
-  age_vaccination_beta_modifier <- purrr::map_dfr(vacc_order, function(j) {
-    dose_details <- vaccine_parameters %>%
-      dplyr::mutate(order = abs(j - dose)) %>%
-      dplyr::filter(order == min(order))
-
-    n_age <- demog_data$input_data$n_age
-
-    short_term <- base::expand.grid(
-      dim1 = seq_len(n_age),
-      dim2 = j,
-      dim3 = 1,
-      value = dose_details$value[dose_details$parameter == "short_term_protection"]
-    )
-
-    long_term <- base::expand.grid(
-      dim1 = seq_len(n_age),
-      dim2 = j + 1,
-      dim3 = 1,
-      value = dose_details$value[dose_details$parameter == "long_term_protection"]
-    )
-
-    dplyr::bind_rows(short_term, long_term)
-  })
-
+  age_vaccination_beta_modifier <- base::expand.grid(
+    dim1 = seq_len(n_age),
+    dim2 = seq_len(n_vacc)[-1],
+    dim3 = 1
+  )
+  age_vaccination_beta_modifier$value <- strata$protection[age_vaccination_beta_modifier$dim2]
 
   # ---- Natural Immunity Waning ----
   nat_waning <- disease_parameters %>%
@@ -199,56 +199,35 @@ case_vaccine_to_param <- function(
     base::gsub("NA", 0, .) %>%
     base::as.numeric() * 365
 
-  year_seed_time <- base::sort(base::floor(tt_seeded * 365))
+  # ---- Transmission and seeding ----
+  if (!isTRUE(WHO_seed_switch)) transmission_history <- "endemic"
 
-  # ---- WHO Seeding ----
-  if (WHO_seed_switch) {
-
-    seed_data <- case_df %>%
-      dplyr::mutate(value = dplyr::case_when(
-        dim4 == 1 & dim1 == 1 ~ 1,
-        TRUE ~ value
-      ))
-
-    giant_df <- seed_data %>%
-      mutate(dim4 = dim4 * 2 - 1) %>%  # shift original dim4 to 1, 3, 5, ...
-      bind_rows(
-        seed_data %>%
-          mutate(
-            dim4 = dim4 * 2,          # shift to 2, 4, 6, ...
-            value = 0
-          )
-      ) %>%
-      arrange(dim1, dim2, dim3, dim4)
-
-
-    # Adjust timepoints to match WHO-style seeding schedule
-    original_times <- year_seed_time
-    seed_time <- c(0, base::unlist(base::lapply(original_times[original_times != 0], function(e) c(e, e + 1))))
-
-  } else {
-
-    # Minimal fallback if WHO seed switch is off
-    seed_time <- c(base::min(year_seed_time), base::max(year_seed_time) + 1)
-
-    seed_data <- base::data.frame(
-      dim1 = 1, dim2 = 1, dim3 = 1,
-      dim4 = seq_along(seed_time),
-      value = 1
-    )
-  }
-
-  #Recalibrate dim4
-  vacc_df <- vacc_df %>%
-    arrange(dim4, year, dim1, dim2, dim3) %>%
-    mutate(dim4 = dplyr::dense_rank(year))
+  history <- build_transmission_history(
+    case_reports = processed_case_reports,
+    population = demog_data$population_data,
+    years = years,
+    R0 = R0,
+    disease = disease,
+    transmission_history = transmission_history,
+    circulation_threshold = circulation_threshold,
+    reporting_fraction = reporting_fraction,
+    seed_floor = seed_floor
+  )
 
   list(
-    tt_vaccination = sort(replace(unique(match(vacc_df$year, years)), 1, 0)),
-    vaccination_coverage = vacc_df,
-    tt_seeded = seed_time,
+    tt_vaccination = seq_along(years) - 1,
+    routine_coverage = routine_coverage,
+    dose_ages = dose_ages,
+    sia = sia,
+    coverage_accuracy = coverage_accuracy,
+    vaccine_strata = strata,
+    tt_seeded = history$tt_seeded,
     nat_waning = nat_waning,
     age_vaccination_beta_modifier = age_vaccination_beta_modifier,
-    seed_data = seed_data
+    seed_data = history$seed_data,
+    R0 = history$R0,
+    tt_R0 = history$tt_R0,
+    transmission_history = transmission_history,
+    transmission_summary = history$summary
   )
 }

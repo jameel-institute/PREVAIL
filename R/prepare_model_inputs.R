@@ -20,11 +20,13 @@
 #' @param year_end Final year to include (default: from migration data).
 #' @param n_age Number of age groups in the model.
 #' @param n_risk Number of risk groups in the model.
+#' @param coverage_source Passed to [process_vaccination_routine()].
 #'
 #' @return A named list containing:
 #' \describe{
 #'   \item{processed_demographic_data}{Output from `process_demography()`.}
-#'   \item{processed_case_data}{Filtered disease case data.}
+#'   \item{processed_case_data}{Filtered disease case data (years with at least one reported case).}
+#'   \item{processed_case_reports}{As `processed_case_data` but keeping years with zero reported cases.}
 #'   \item{processed_vaccination_data}{Cleaned and summarized routine vaccination data.}
 #'   \item{processed_vaccination_sia}{Filtered SIA data for the specified vaccine.}
 #'   \item{demographic_plots}{(Placeholder) Plot object to visualize processed inputs.}
@@ -52,7 +54,8 @@ prepare_model_inputs <- function(
   year_start = "",
   year_end = "",
   n_age = 1,
-  n_risk = 1
+  n_risk = 1,
+  coverage_source = "wuenic"
 ) {
 
   #Establish the number of vaccines
@@ -96,13 +99,23 @@ prepare_model_inputs <- function(
     year_end = demographic$input_data$year_end
   )
 
+  case_reports <- process_prior_cases(
+    disease_data = disease_data,
+    iso = demographic$input_data$iso,
+    disease = disease,
+    year_start = demographic$input_data$year_start,
+    year_end = demographic$input_data$year_end,
+    keep_zero = TRUE
+  )
+
   # Step 3: Routine vaccination data
   routine <- process_vaccination_routine(
     vaccination_data = vaccination_data_routine,
     iso = demographic$input_data$iso,
     vaccine = vaccine,
     year_start = demographic$input_data$year_start,
-    year_end = demographic$input_data$year_end
+    year_end = demographic$input_data$year_end,
+    coverage_source = coverage_source
   )
 
   # Step 4: SIA vaccination data
@@ -118,6 +131,7 @@ prepare_model_inputs <- function(
   list(
     processed_demographic_data = demographic,
     processed_case_data = cases,
+    processed_case_reports = case_reports,
     processed_vaccination_data = routine,
     processed_vaccination_sia = sia
   )

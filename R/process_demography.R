@@ -52,11 +52,21 @@ process_demography <- function(
   time_run_for <- length(years_all)
   time_all <- 0:(time_run_for - 1)
 
-  migration <- dplyr::filter(migration, iso3 == iso, year %in% years_all)
-  fertility <- dplyr::filter(fertility, iso3 == iso, year %in% years_all)
-  mortality <- dplyr::filter(mortality, iso3 == iso, year %in% years_all)
-  population_all <- dplyr::filter(population_all, iso3 == iso, year %in% years_all)
-  population_female <- dplyr::filter(population_female, iso3 == iso, year %in% years_all)
+  # The demographic data (UN WPP) stop before the present day. Each series is carried forward from its last year
+  # with data, so that the final model years still have births, deaths and migration.
+  demography_last_year <- min(
+    max(migration$year[migration$iso3 == iso], na.rm = TRUE),
+    max(fertility$year[fertility$iso3 == iso], na.rm = TRUE),
+    max(mortality$year[mortality$iso3 == iso], na.rm = TRUE),
+    max(population_all$year[population_all$iso3 == iso], na.rm = TRUE),
+    max(population_female$year[population_female$iso3 == iso], na.rm = TRUE)
+  )
+
+  migration <- carry_forward_years(dplyr::filter(migration, iso3 == iso), years_all)
+  fertility <- carry_forward_years(dplyr::filter(fertility, iso3 == iso), years_all)
+  mortality <- carry_forward_years(dplyr::filter(mortality, iso3 == iso), years_all)
+  population_all <- carry_forward_years(dplyr::filter(population_all, iso3 == iso), years_all)
+  population_female <- carry_forward_years(dplyr::filter(population_female, iso3 == iso), years_all)
 
   all_ages <- 0:100
   female_ages <- 15:49
@@ -163,7 +173,38 @@ process_demography <- function(
       year_end = max(years_all),
       n_age = n_age,
       n_vacc = n_vacc,
-      n_risk = n_risk
+      n_risk = n_risk,
+      demography_last_year = min(demography_last_year, max(years_all))
     )
   )
+}
+
+#' Carry the Last Year of a Yearly Dataset Forward
+#'
+#' Restricts a data frame with a `year` column to `years` and, where `years` runs past the last year with data,
+#' repeats the last year's rows for each later year. PREVAIL's demographic inputs (UN WPP) end in 2023; without
+#' this the model had no births, deaths or migration from 2024 onwards.
+#'
+#' @param df A data frame with a `year` column.
+#' @param years The years required.
+#'
+#' @return `df` restricted to `years`, extended to the last of `years` if needed, ordered by year.
+#' @keywords internal
+carry_forward_years <- function(df, years) {
+  df <- as.data.frame(df)
+  if (nrow(df) == 0) return(df)
+  last_year <- max(df$year, na.rm = TRUE)
+  later <- years[years > last_year]
+  if (length(later) > 0) {
+    last_rows <- df[df$year == last_year, , drop = FALSE]
+    extra <- do.call(rbind, lapply(later, function(y) {
+      last_rows$year <- y
+      last_rows
+    }))
+    df <- rbind(df, extra)
+  }
+  df <- df[df$year %in% years, , drop = FALSE]
+  df <- df[order(df$year), , drop = FALSE]
+  rownames(df) <- NULL
+  df
 }

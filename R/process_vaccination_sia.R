@@ -19,8 +19,8 @@ process_vaccination_sia <- function(
     year_start = "",
     year_end = ""
 ) {
-  # Ensure data.table format
-  data.table::setDT(vaccination_data)
+  # copy, so that the package data are not modified by reference
+  vaccination_data <- data.table::as.data.table(vaccination_data)
 
   # Standardize column name if needed
   data.table::setnames(vaccination_data, old = "vaccine", new = "vaccination_name", skip_absent = TRUE)
@@ -28,12 +28,23 @@ process_vaccination_sia <- function(
   # Determine time window
   years <- get_years(vaccination_data$year, year_start, year_end)
 
+  # The SIA data name diphtheria "dip" and pertussis "per"; match those as well as the full name
+  pattern <- switch(
+    tolower(vaccine),
+    diphtheria = "diphtheria|^dip",
+    pertussis = "pertussis|^per|^aper|^wper",
+    vaccine
+  )
+  disease_col <- if ("disease" %in% names(vaccination_data)) vaccination_data$disease else rep("", nrow(vaccination_data))
+
   # Filter
   result <- vaccination_data[
     !is.na(coverage) &
       area == iso &
       year %in% years &
-      (vaccine == "All" | grepl(vaccine, vaccination_name, ignore.case = TRUE))
+      (vaccine == "All" |
+         grepl(pattern, vaccination_name, ignore.case = TRUE) |
+         grepl(pattern, disease_col, ignore.case = TRUE))
   ]
 
   return(result[])

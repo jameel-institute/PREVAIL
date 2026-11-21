@@ -42,31 +42,18 @@ aggregate_inputs <- function(preprocessed,
     ) %>%
     dplyr::mutate(value = value / 365)
 
-  #Update vaccination
-  vaccination_coverage_expanded <- generate_array_df(
-    dim1 = preprocessed$processed_demographic_data$input_data$n_age,
-    dim2 = preprocessed$processed_demographic_data$input_data$n_vacc,
-    dim3 = preprocessed$processed_demographic_data$input_data$n_risk,
-    dim4 = max(cv_params$vaccination_coverage$dim4),
-    updates = cv_params$vaccination_coverage
-  ) %>%
-    group_by(dim4) %>%
-    mutate(
-      year = ifelse(is.na(year), unique(na.omit(year)), year)
-    ) %>%
-    ungroup() %>%
-    #Update value to get correct coverage -
-    mutate(
-      value = 1 - (1 - pmin(value, 0.999)) ^ (1/365)
-    )
-
-  vaccination_people <- vaccination_coverage_expanded %>%
-    dplyr::left_join(
-      weight_reformatted %>%
-        rename(pop = value), by = c("year" = "year", "dim1" = "age")
-    ) %>%
-    dplyr::mutate(value = pop * (value)) %>%
-    tidyr::drop_na()
+  # Vaccination rates, built directly in the age structure the model will use (see build_vaccination_rates())
+  vaccination_rates <- build_vaccination_rates(
+    routine_coverage = cv_params$routine_coverage,
+    dose_ages = cv_params$dose_ages,
+    sia = cv_params$sia,
+    years = preprocessed$processed_demographic_data$input_data$year_start:preprocessed$processed_demographic_data$input_data$year_end,
+    n_vacc = preprocessed$processed_demographic_data$input_data$n_vacc,
+    population = preprocessed$processed_demographic_data$population_data,
+    aggregate_age = aggregate_age,
+    new_age_breaks = new_age_breaks,
+    coverage_accuracy = cv_params$coverage_accuracy
+  )
 
   cv_params$age_vaccination_beta_modifier_upd <- cv_params$age_vaccination_beta_modifier %>%
     dplyr::left_join(
@@ -80,8 +67,7 @@ aggregate_inputs <- function(preprocessed,
 
   default_inputs <- list(
     age_beta_mod   = cv_params$age_vaccination_beta_modifier,
-    vacc_cov       = vaccination_people %>%
-      dplyr::mutate(value = value/pop),
+    vacc_cov       = vaccination_rates,
     N0             = preprocessed$processed_demographic_data$N0,
     crude_death    = preprocessed$processed_demographic_data$crude_death %>%
       dplyr::mutate(value = value / 365),
@@ -111,8 +97,7 @@ aggregate_inputs <- function(preprocessed,
 
   inputs <- list(
     age_beta_mod   = aggregate_age_structure(cv_params$age_vaccination_beta_modifier_upd, age_breaks = new_age_breaks, method = "sum", weights = weight_reformatted, time_var = NULL),
-    vacc_cov       = aggregate_age_structure(vaccination_people %>%
-                                               select(dim1:year), age_breaks = new_age_breaks, method = "sum", weights = weight_reformatted, time_var = "dim4"),
+    vacc_cov       = vaccination_rates,
     N0             = aggregate_age_structure(preprocessed$processed_demographic_data$N0, age_breaks = new_age_breaks, method = "sum", time_var = NULL),
     crude_death    = aggregate_age_structure(death_upd, age_breaks = new_age_breaks, method = "sum", time_var = "dim3"),
     crude_birth    = aggregate_age_structure(crude_birth_augmented %>% dplyr::select(-population), age_breaks = new_age_breaks, method = "sum", time_var = "dim2"),
@@ -142,15 +127,6 @@ aggregate_inputs <- function(preprocessed,
     dplyr::left_join(
       inputs$population %>% dplyr::ungroup() %>% dplyr::select(dim1, dim2, population = value),
       by = c("dim1", "dim3" = "dim2")
-    ) %>%
-    dplyr::mutate(value = value / population)
-
-  inputs$vacc_cov <- inputs$vacc_cov %>%
-    dplyr::mutate(dim1 = as.numeric(dim1), dim2 = as.numeric(dim2), dim3 = as.numeric(dim3), dim4 = as.numeric(dim4)) %>%
-    dplyr::arrange(dim1, dim2, dim3, dim4) %>%
-    dplyr::left_join(
-      inputs$population %>% dplyr::select(dim1, year, population = value),
-      by = c("year", "dim1")
     ) %>%
     dplyr::mutate(value = value / population)
 

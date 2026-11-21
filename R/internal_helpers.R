@@ -175,11 +175,16 @@ split_and_sum <- function(vec, n_bins) {
 #' Filters a WHO vaccination schedule data frame to extract age-specific routine vaccination
 #' rounds for a specific vaccine and country.
 #'
+#' The age of each dose is converted to years row by row (see [parse_schedule_age()]). In 0.1.0 the conversion was
+#' not row-wise: every dose was given the median over the whole column, read in its own unit, so for example the
+#' United Kingdom's first measles dose ("Y1") was placed in adulthood.
+#'
 #' @param vaccination_schedule A data frame of WHO vaccination schedules.
 #' @param vaccination_type A character string to match against `vaccine_description`.
 #' @param iso A 3-letter ISO country code.
 #'
-#' @return A filtered and arranged `data.frame` with an added `age_years` column.
+#' @return A filtered and arranged `data.frame` with an added `age_years` column. Rows whose age cannot be read are
+#'   dropped.
 #'
 #' @importFrom dplyr filter mutate arrange case_when
 #' @keywords internal
@@ -194,199 +199,10 @@ filter_vaccine_schedule <- function(vaccination_schedule, vaccination_type, iso)
       !grepl("contact", age_administered),
       vaccine_code != "TD_S"
     ) %>%
-    dplyr::mutate(age_years = dplyr::case_when(
-      grepl("Y", age_administered) ~ median(as.numeric(gsub("[^0-9.-]", "", unlist(strsplit(age_administered, "-"))))),
-      grepl("M", age_administered) ~ median(as.numeric(gsub("[^0-9.-]", "", unlist(strsplit(age_administered, "-"))))) / 12,
-      grepl("W", age_administered) ~ median(as.numeric(gsub("[^0-9.-]", "", unlist(strsplit(age_administered, "-"))))) / 52,
-      grepl("D", age_administered) ~ median(as.numeric(gsub("[^0-9.-]", "", unlist(strsplit(age_administered, "-"))))) / 365,
-      TRUE ~ NA_real_
-    )) %>%
+    dplyr::mutate(age_years = parse_schedule_age(age_administered)) %>%
+    resolve_relative_schedule_ages() %>%
+    dplyr::filter(!is.na(age_years)) %>%
     dplyr::arrange(age_years)
-}
-
-#' Build Routine Vaccination Parameters from Schedule and Coverage Data
-#'
-#' Uses filtered coverage data and country-specific schedule to map routine vaccination
-#' parameters to model input dimensions.
-#'
-#' @param vaccination_data A data frame with annual coverage estimates.
-#' @param schedule A filtered and parsed WHO schedule (output from `filter_vaccine_schedule()`).
-#' @param ages A numeric vector of model age groups.
-#' @param years A numeric vector of model years.
-#'
-#' @return A data frame with columns: dim1 (age), dim2 (dose group), dim3, dim4 (year), and value.
-#'
-#' @importFrom dplyr group_by summarise filter pull slice
-#' @importFrom purrr map_dfr
-#' @keywords internal
-build_routine_vaccination_param <- function(vaccination_data, schedule, ages, years) {
-
-  df <- fill_missing_years_general(vaccination_data, "year", "coverage") %>%
-    dplyr::group_by(vaccine, vaccine_description, dose_order, year) %>%
-    dplyr::summarise(coverage = max(coverage), .groups = "drop") %>%
-    dplyr::filter(coverage > 0)
-
-  purrr::map_dfr(seq_len(nrow(df)), function(i) {
-    row <- df[i, ]
-    dose <- min(row$dose_order, max(schedule$schedulerounds, na.rm = TRUE))
-    timing <- schedule %>%
-      dplyr::filter(schedulerounds == dose) %>%
-      dplyr::filter(
-        year == if (all(year > row$year)) min(year) else max(year[year <= row$year])
-      ) %>%
-      dplyr::pull(age_years)
-    targets <- if (row$dose_order == 1) 1 else (2 * row$dose_order - 2):(2 * row$dose_order - 1)
-    expand.grid(
-      dim1 = match(floor(timing), ages),
-      dim2 = targets,
-      dim3 = 1,
-      dim4 = match(row$year, years),
-      year = row$year,
-      value = row$coverage
-    )
-  })
-}
-
-#' Build Seeded Case Parameter Array from Case and Demographic Data
-#'
-#' Constructs a time- and age-structured seeding input array for model initialization.
-#'
-#' @param processed_case A data frame with `year` and `cases` columns.
-#' @param demog_data A named list including `population_data`, a matrix of counts.
-#' @param ages A numeric vector of age bins.
-#'
-#' @return A data frame with columns: dim1 (age), dim2, dim3, dim4 (year offset), and value.
-#'
-#' @importFrom purrr map_dfr
-#' @importFrom dplyr filter bind_rows
-#' @keywords internal
-build_seeded_case_param <- function(processed_case, demog_data, ages) {
-
-  df <- insert_zero_case_rows(processed_case)
-
-  years_adjusted <- unique(df$year)
-  years_adjusted <- years_adjusted[which(is.integer(round(years_adjusted)))]
-
-  pop_dat <- demog_data$population_data
-  row.names(pop_dat) <- demog_data$input_data$year_start:(nrow(pop_dat) + demog_data$input_data$year_start - 1)
-
-  purrr::map_dfr(seq_len(nrow(df)), function(i) {
-    row <- df[i, ]
-    popdist <- pop_dat[which(row.names(pop_dat) == floor(row$year)), ]
-    popdist <- popdist / sum(popdist)
-    names(popdist) <- ages + 1
-    if (row$cases == 0) {
-      data.frame(
-        dim1 = ages + 1,
-        dim2 = 1,
-        dim3 = 1,
-        dim4 = i + 1,
-        value = 0
-      )
-    } else {
-      sampled <- table(sample(names(popdist), row$cases, prob = popdist, replace = TRUE))
-      output <- as.data.frame(sampled)
-      names(output) <- c("dim1", "value")
-      output$dim1 <- as.integer(as.character(output$dim1))
-      output$dim2 <- 1
-      output$dim3 <- 1
-      output$dim4 <- i + 1
-      output
-    }
-  }) %>%
-    dplyr::bind_rows(data.frame(dim1 = 1, dim2 = 1, dim3 = 1, dim4 = 1, value = 0))
-}
-
-#' Build SIA Vaccination Parameter Array from Age- and Year-Structured Data
-#'
-#' Maps SIA coverage data to model parameter dimensions.
-#'
-#' @param sia_data A data frame with columns: `age`, `year`, and `coverage`.
-#' @param ages A numeric vector of model age groups.
-#' @param years A numeric vector of model years.
-#'
-#' @return A data frame with columns: `dim1`, `dim2`, `dim3`, `dim4`, `value`.
-#'
-#' @importFrom dplyr group_by summarise
-#' @keywords internal
-build_sia_vaccination_param <- function(sia_data, ages, years) {
-
-  df <- fill_missing_years_general(sia_data, "year", "coverage") %>%
-    dplyr::group_by(disease, vaccination_name, age, year) %>%
-    dplyr::summarise(coverage = max(coverage), .groups = "drop")
-
-  years_adjusted <- unique(df$year)
-
-  data.frame(
-    dim1 = match(df$age, ages),
-    dim2 = 1,
-    dim3 = 1,
-    dim4 = match(df$year, years_adjusted),
-    year = df$year,
-    value = df$coverage
-  )
-}
-
-#' Fill Missing Years by Group
-#'
-#' Ensures continuous years for each group in a dataset and fills missing values with zero.
-#'
-#' @param df A data frame with a time series per group.
-#' @param year_col Name of the year column (string).
-#' @param value_col Name of the value column (string).
-#'
-#' @return A data frame with missing years filled and zeroed `value_col` where needed.
-#'
-#' @importFrom rlang sym .data
-#' @importFrom dplyr group_by summarise rowwise mutate select left_join arrange all_of if_else
-#' @importFrom tidyr unnest
-#' @importFrom tibble tibble
-#' @keywords internal
-fill_missing_years_general <- function(df, year_col, value_col) {
-
-  year_sym <- sym(year_col)
-  value_sym <- sym(value_col)
-
-  # Grouping columns are all others
-  group_cols <- setdiff(names(df), c(year_col, value_col))
-
-  df_filled <- df %>%
-    group_by(across(all_of(group_cols))) %>%
-    summarise(
-      min_year = min(.data[[year_col]]),
-      max_year = max(.data[[year_col]]),
-      .groups = "drop"
-    ) %>%
-    rowwise() %>%
-    mutate(data = list(tibble(!!year_sym := seq(min_year, max_year + 1)))) %>%
-    select(-min_year, -max_year) %>%
-    unnest(data) %>%
-    left_join(df, by = c(setNames(group_cols, group_cols), year_col)) %>%
-    mutate(
-      !!value_sym := if_else(is.na(.data[[value_col]]), 0, .data[[value_col]])
-    ) %>%
-    arrange(across(all_of(c(group_cols, year_col))))
-
-  return(df_filled)
-}
-
-#' Combine Routine and SIA Vaccination Parameters
-#'
-#' Adds routine and SIA vaccination parameters, capping total coverage at 100%.
-#'
-#' @param routine_df Data frame with routine vaccination parameters.
-#' @param sia_df Optional data frame with SIA parameters.
-#'
-#' @return A data frame with merged vaccination parameters (same structure as inputs).
-#'
-#' @importFrom dplyr bind_rows group_by summarise
-#' @keywords internal
-combine_vaccination_params <- function(routine_df, sia_df = NULL) {
-  combined <- dplyr::bind_rows(routine_df, sia_df)
-  combined %>%
-    dplyr::group_by(dim1, dim2, dim3, dim4) %>%
-    dplyr::summarise(year = unique(year),
-                     value = pmin(sum(value), 1), .groups = "drop")
 }
 
 #' Convert Long-Format Data Frame to Multi-Dimensional Array
@@ -476,3 +292,33 @@ generate_array_df <- function(dim1, dim2 = NULL, dim3 = NULL, dim4 = NULL, dim5 
 #'
 #' @keywords internal
 array_from_df <- function(...) df_to_array(generate_array_df(...))
+
+
+#' Resolve Schedule Ages Given Relative to an Earlier Dose
+#'
+#' Some schedule ages are intervals since the previous dose (for example `"+M1"`). Within a schedule year, product
+#' and target population these are added to the age of the preceding round. If the preceding round has no age the
+#' result is `NA`.
+#'
+#' @param schedule A schedule with `age_years` from [parse_schedule_age()] and columns `year`, `vaccine_code`,
+#'   `target_pop` and `schedulerounds`.
+#'
+#' @return The schedule with relative ages replaced by absolute ages.
+#' @keywords internal
+resolve_relative_schedule_ages <- function(schedule) {
+  schedule <- as.data.frame(schedule)
+  relative <- grepl("^\\+", schedule$age_administered)
+  schedule$age_years <- as.numeric(schedule$age_years)
+  if (!any(relative)) return(schedule)
+  key <- paste(schedule$year, schedule$vaccine_code, schedule$target_pop)
+  for (k in unique(key[relative])) {
+    idx <- which(key == k)
+    idx <- idx[order(schedule$schedulerounds[idx])]
+    previous <- NA_real_
+    for (i in idx) {
+      if (relative[i]) schedule$age_years[i] <- previous + schedule$age_years[i]
+      previous <- schedule$age_years[i]
+    }
+  }
+  schedule
+}

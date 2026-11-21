@@ -615,11 +615,13 @@ beta_updated[, , ] <- if (i <= age_maternal_protection_ends)
 inf_weighted[, , ] <- beta_updated[i, j, k] * (I_available[i, j, k] + Is_available[i, j, k])
 infectious_source[] <- sum(inf_weighted[i, , ])  # By age only
 
-# Age-specific FOI: contact matrix × infectious source
-lambda_contact[, ] <- contact_matrix[i, j] * infectious_source[j]
+# Age-specific FOI: contact matrix × prevalence of (weighted) infection in the contacted age group
+# The contact matrix is a per-person mixing matrix (rows sum to 1: the share of an i year old's contacts made with
+# age group j), so the chance a contact is infectious is the infectious share of age group j, not of age group i
+lambda_contact[, ] <- if (Npop_age[j] <= 0) 0 else contact_matrix[i, j] * infectious_source[j] / Npop_age[j]
 
 # Raw FOI per age group
-lambda_raw[] <- if (Npop_age[i] <= 0) 0 else sum(lambda_contact[i, ]) / Npop_age[i]
+lambda_raw[] <- sum(lambda_contact[i, ])
 
 # Final FOI per age-vacc-risk stratum
 lambda[, , ] <- if (N <= 0) 0 else

@@ -404,11 +404,11 @@ public:
     std::vector<real_type> waning_to_S_long;
     std::vector<real_type> waning_to_S_unvaccinated;
     std::vector<real_type> waning_to_S_short;
-    std::vector<real_type> lambda_contact;
     std::vector<real_type> S_after_waning;
     std::vector<real_type> S_available;
     std::vector<real_type> S_death;
     std::vector<real_type> Npop_age;
+    std::vector<real_type> lambda_contact;
     std::vector<real_type> lambda_raw;
     std::vector<real_type> lambda;
     std::vector<real_type> lambda_S;
@@ -798,15 +798,15 @@ public:
     std::vector<real_type> waning_to_S_long(shared.dim.waning_to_S_long.size);
     std::vector<real_type> waning_to_S_unvaccinated(shared.dim.waning_to_S_unvaccinated.size);
     std::vector<real_type> waning_to_S_short(shared.dim.waning_to_S_short.size);
-    std::vector<real_type> lambda_contact(shared.dim.lambda_contact.size);
     std::vector<real_type> S_after_waning(shared.dim.S_after_waning.size);
     std::vector<real_type> S_available(shared.dim.S_available.size);
     std::vector<real_type> S_death(shared.dim.S_death.size);
     std::vector<real_type> Npop_age(shared.dim.Npop_age.size);
+    std::vector<real_type> lambda_contact(shared.dim.lambda_contact.size);
     std::vector<real_type> lambda_raw(shared.dim.lambda_raw.size);
     std::vector<real_type> lambda(shared.dim.lambda.size);
     std::vector<real_type> lambda_S(shared.dim.lambda_S.size);
-    return internal_state{Npop_age_risk, vaccinated_mums, antibody_mums, aging_out_of_S, aging_out_of_E, aging_out_of_I, aging_out_of_R, aging_out_of_Is, aging_out_of_Rc, aging_into_E, aging_into_I, aging_into_R, aging_into_Is, aging_into_Rc, migration, migration_distribution, death_int, repro_weight_now, birth_int, vaccination_prop_intermediate, t_seeded, E_after_aging, I_after_aging, R_after_aging, Is_after_aging, Rc_after_aging, background_death, reproductive_population, vaccination_prop, seeded_actual, waning_R, waning_Rc, vaccinating_out_of_E, vaccinating_out_of_I, vaccinating_out_of_R, vaccinating_out_of_Is, vaccinating_out_of_Rc, migration_adjusted, Npop_background_death, prop_maternal_vaccinated, prop_maternal_natural, infectious_period, vaccinating_into_E, vaccinating_into_I, vaccinating_into_R, vaccinating_into_Is, vaccinating_into_Rc, birth_rate, beta, E_after_vaccination, I_after_vaccination, R_after_vaccination, Is_after_vaccination, Rc_after_vaccination, migration_S, migration_E, migration_I, migration_R, migration_Is, migration_Rc, Births, beta_updated, aging_into_S, waning_from_E_short, waning_from_E_long, waning_from_I_short, waning_from_I_long, waning_from_R_short, waning_from_R_long, waning_from_Is_short, waning_from_Is_long, waning_from_Rc_short, waning_from_Rc_long, S_after_aging, waning_to_E_long, waning_to_E_unvaccinated, waning_to_I_long, waning_to_I_unvaccinated, waning_to_R_long, waning_to_R_unvaccinated, waning_to_Is_long, waning_to_Is_unvaccinated, waning_to_Rc_long, waning_to_Rc_unvaccinated, vaccinating_out_of_S, E_after_waning, I_after_waning, R_after_waning, Is_after_waning, Rc_after_waning, E_available, I_available, R_available, Rc_available, Is_available, vaccinating_into_S, incubated, recovered_I_to_R, recovered_from_Is, E_death, I_death, R_death, Is_death, Rc_death, S_after_vaccination, inf_weighted, into_I, recovered_Is_to_R, waning_from_S_short, waning_from_S_long, infectious_source, into_Is, recovered_Is_to_Rc, waning_to_S_long, waning_to_S_unvaccinated, waning_to_S_short, lambda_contact, S_after_waning, S_available, S_death, Npop_age, lambda_raw, lambda, lambda_S};
+    return internal_state{Npop_age_risk, vaccinated_mums, antibody_mums, aging_out_of_S, aging_out_of_E, aging_out_of_I, aging_out_of_R, aging_out_of_Is, aging_out_of_Rc, aging_into_E, aging_into_I, aging_into_R, aging_into_Is, aging_into_Rc, migration, migration_distribution, death_int, repro_weight_now, birth_int, vaccination_prop_intermediate, t_seeded, E_after_aging, I_after_aging, R_after_aging, Is_after_aging, Rc_after_aging, background_death, reproductive_population, vaccination_prop, seeded_actual, waning_R, waning_Rc, vaccinating_out_of_E, vaccinating_out_of_I, vaccinating_out_of_R, vaccinating_out_of_Is, vaccinating_out_of_Rc, migration_adjusted, Npop_background_death, prop_maternal_vaccinated, prop_maternal_natural, infectious_period, vaccinating_into_E, vaccinating_into_I, vaccinating_into_R, vaccinating_into_Is, vaccinating_into_Rc, birth_rate, beta, E_after_vaccination, I_after_vaccination, R_after_vaccination, Is_after_vaccination, Rc_after_vaccination, migration_S, migration_E, migration_I, migration_R, migration_Is, migration_Rc, Births, beta_updated, aging_into_S, waning_from_E_short, waning_from_E_long, waning_from_I_short, waning_from_I_long, waning_from_R_short, waning_from_R_long, waning_from_Is_short, waning_from_Is_long, waning_from_Rc_short, waning_from_Rc_long, S_after_aging, waning_to_E_long, waning_to_E_unvaccinated, waning_to_I_long, waning_to_I_unvaccinated, waning_to_R_long, waning_to_R_unvaccinated, waning_to_Is_long, waning_to_Is_unvaccinated, waning_to_Rc_long, waning_to_Rc_unvaccinated, vaccinating_out_of_S, E_after_waning, I_after_waning, R_after_waning, Is_after_waning, Rc_after_waning, E_available, I_available, R_available, Rc_available, Is_available, vaccinating_into_S, incubated, recovered_I_to_R, recovered_from_Is, E_death, I_death, R_death, Is_death, Rc_death, S_after_vaccination, inf_weighted, into_I, recovered_Is_to_R, waning_from_S_short, waning_from_S_long, infectious_source, into_Is, recovered_Is_to_Rc, waning_to_S_long, waning_to_S_unvaccinated, waning_to_S_short, S_after_waning, S_available, S_death, Npop_age, lambda_contact, lambda_raw, lambda, lambda_S};
   }
   static data_type build_data(cpp11::list data, const shared_state& shared) {
     auto serosurvey = std::vector<real_type>(shared.dim.serosurvey.size);
@@ -1758,11 +1758,6 @@ public:
         }
       }
     }
-    for (size_t i = 1; i <= shared.dim.lambda_contact.dim[0]; ++i) {
-      for (size_t j = 1; j <= shared.dim.lambda_contact.dim[1]; ++j) {
-        internal.lambda_contact[i - 1 + (j - 1) * shared.dim.lambda_contact.mult[1]] = shared.contact_matrix[i - 1 + (j - 1) * shared.dim.contact_matrix.mult[1]] * internal.infectious_source[j - 1];
-      }
-    }
     for (size_t i = 1; i <= shared.dim.S_after_waning.dim[0]; ++i) {
       for (size_t j = 1; j <= shared.dim.S_after_waning.dim[1]; ++j) {
         for (size_t k = 1; k <= shared.dim.S_after_waning.dim[2]; ++k) {
@@ -1787,8 +1782,13 @@ public:
     for (size_t i = 1; i <= shared.dim.Npop_age.size; ++i) {
       internal.Npop_age[i - 1] = dust2::array::sum<real_type>(internal.S_available.data(), shared.dim.S_available, {i - 1, i - 1}, {0, shared.dim.S_available.dim[1] - 1}, {0, shared.dim.S_available.dim[2] - 1}) + dust2::array::sum<real_type>(internal.E_available.data(), shared.dim.E_available, {i - 1, i - 1}, {0, shared.dim.E_available.dim[1] - 1}, {0, shared.dim.E_available.dim[2] - 1}) + dust2::array::sum<real_type>(internal.I_available.data(), shared.dim.I_available, {i - 1, i - 1}, {0, shared.dim.I_available.dim[1] - 1}, {0, shared.dim.I_available.dim[2] - 1}) + dust2::array::sum<real_type>(internal.R_available.data(), shared.dim.R_available, {i - 1, i - 1}, {0, shared.dim.R_available.dim[1] - 1}, {0, shared.dim.R_available.dim[2] - 1}) + dust2::array::sum<real_type>(internal.Is_available.data(), shared.dim.Is_available, {i - 1, i - 1}, {0, shared.dim.Is_available.dim[1] - 1}, {0, shared.dim.Is_available.dim[2] - 1}) + dust2::array::sum<real_type>(internal.Rc_available.data(), shared.dim.Rc_available, {i - 1, i - 1}, {0, shared.dim.Rc_available.dim[1] - 1}, {0, shared.dim.Rc_available.dim[2] - 1});
     }
+    for (size_t i = 1; i <= shared.dim.lambda_contact.dim[0]; ++i) {
+      for (size_t j = 1; j <= shared.dim.lambda_contact.dim[1]; ++j) {
+        internal.lambda_contact[i - 1 + (j - 1) * shared.dim.lambda_contact.mult[1]] = (internal.Npop_age[j - 1] <= 0 ? 0 : shared.contact_matrix[i - 1 + (j - 1) * shared.dim.contact_matrix.mult[1]] * internal.infectious_source[j - 1] / internal.Npop_age[j - 1]);
+      }
+    }
     for (size_t i = 1; i <= shared.dim.lambda_raw.size; ++i) {
-      internal.lambda_raw[i - 1] = (internal.Npop_age[i - 1] <= 0 ? 0 : dust2::array::sum<real_type>(internal.lambda_contact.data(), shared.dim.lambda_contact, {i - 1, i - 1}, {0, shared.dim.lambda_contact.dim[1] - 1}) / internal.Npop_age[i - 1]);
+      internal.lambda_raw[i - 1] = dust2::array::sum<real_type>(internal.lambda_contact.data(), shared.dim.lambda_contact, {i - 1, i - 1}, {0, shared.dim.lambda_contact.dim[1] - 1});
     }
     for (size_t i = 1; i <= shared.dim.lambda.dim[0]; ++i) {
       for (size_t j = 1; j <= shared.dim.lambda.dim[1]; ++j) {

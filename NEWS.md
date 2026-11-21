@@ -65,6 +65,11 @@ PREVAIL produces can be used directly, and fixes several problems in the model e
 * Ageing is drawn from a binomial distribution and vaccination is stochastic by default (`stochastic_vaccination =
   1`), so whole people move. Before, ageing moved a fixed fraction of each compartment and parts of people were left
   in E and I that could never recover (the binomial draws truncate them).
+* The force of infection on age group `i` uses the infectious share of each contacted age group `j`
+  (`sum_j C[i, j] I_j / N_j`). The contact matrix is a per-person mixing matrix (rows sum to one), but the model
+  divided by the population of the susceptible's own age group (`N_i`), so small age groups (the elderly) faced a
+  force of infection several times too high and large ones too low. The reproduction number is unchanged (the two
+  next-generation matrices have the same eigenvalue); who gets infected is not.
 
 ## New functions
 

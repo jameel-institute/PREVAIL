@@ -28,11 +28,12 @@ the model's force of infection.
 }
 \details{
 In the model someone of age `j` and vaccination stratum `w` infects, over their infectious period,
-\deqn{R_0 (1 - m_w) C_{ij} S_{iv} (1 - m_v) / N_i}
+\deqn{R_0 (1 - m_w) C_{ij} S_{iv} (1 - m_v) / N_j}
 people of age `i` and stratum `v`, where `m` is vaccine protection (which reduces both susceptibility and
-infectiousness), `C` the contact matrix, `S` the susceptible population and `N_i` the population of age group
-`i`. Collapsing over strata, the reproduction number is the dominant eigenvalue of
-\deqn{M_{ij} = R_0 e_i C_{ij}, \quad e_i = \sum_v S_{iv} (1 - m_v)^2 / N_i.}
+infectiousness), `C` the contact matrix, `S` the susceptible population and `N_j` the population of age group
+`j`. Collapsing over strata, the reproduction number is the dominant eigenvalue of
+\deqn{M_{ij} = R_0 C_{ij} e_j, \quad e_j = \sum_v S_{jv} (1 - m_v)^2 / N_j.}
+(Up to 0.2.0 the model divided by `N_i` instead, which gives a similar matrix with the same eigenvalue.)
 
 The model itself does not output a reproduction number. Up to 0.2.0 it had a `Reff` output, the unweighted mean
 over age groups of the row sums of a related matrix, which is not a reproduction number (it read about 0.5 where

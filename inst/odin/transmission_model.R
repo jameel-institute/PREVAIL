@@ -147,43 +147,37 @@ recovered_Is_to_Rc[, , ] <- if(recovered_Is_to_R[i, j, k] >= recovered_from_Is[i
 #Compute aging flows and post-aging compartment states for all modelled compartments.
 
 # Susceptible (S)
-# The only way to age into the first compartment is into the Susceptible compartment
+# Ageing is sampled, so that whole people move between age groups (with a fixed fraction, parts of people were left in E and I that could never recover or age)
+aging_out_of_S[, , ] <- if(S[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else Binomial(S[i, j, k], max(min(aging_rate[i], 1), 0))
+# The only way to age into the first age group is by being born into the unvaccinated Susceptible compartment
 aging_into_S[1, 1, ]              <- sum(Births)
-# For ages after the 1st age group, we evaluate to see if there are any in the prior age group (i - 1), and i there are, then we sample the aging rate for the prior compartment (aging_rate[i - 1]) to calculate how many are aging into that compartment
-aging_into_S[2:n_age, , ]         <- if(S[i - 1, j, k] <= 0 || aging_rate[i - 1] <= 0) 0 else (S[i - 1, j, k] * max(min(aging_rate[i - 1], 1), 0))
-#To estimate the aging out of the 1st compartment, we make sure that the compartment does not have negative individuals, and then we age them out at the applied rate.
-aging_out_of_S[1, , ] <- if(S[1, j, k] - aging_into_S[1, 1, k] <= 0 || aging_rate[1] <= 0) 0 else (max(S[1, j, k] - aging_into_S[1, 1, k], 0) * aging_rate[1])
-aging_out_of_S[2:n_age, , ] <- if(S[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else (S[i, j, k] * max(min(aging_rate[i], 1), 0))
+# Those ageing into an age group are those who aged out of the one before
+aging_into_S[2:n_age, , ]         <- aging_out_of_S[i - 1, j, k]
 S_after_aging[, , ]               <- max(S[i, j, k] + aging_into_S[i, j, k] - aging_out_of_S[i, j, k], 0)
 
 # Exposed (E)
-aging_into_E[2:n_age, , ]         <- if(E[i - 1, j, k] <= 0 || aging_rate[i - 1] <= 0) 0 else (E[i - 1, j, k] * max(min(aging_rate[i - 1], 1), 0))
-aging_out_of_E[1, , ] <- if(E[1, j, k] - aging_into_E[1, 1, k] <= 0 || aging_rate[1] <= 0) 0 else (max(E[1, j, k] - aging_into_E[1, 1, k], 0) * aging_rate[1])
-aging_out_of_E[2:n_age, , ] <- if(E[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else (E[i, j, k] * max(min(aging_rate[i], 1), 0))
+aging_out_of_E[, , ] <- if(E[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else Binomial(E[i, j, k], max(min(aging_rate[i], 1), 0))
+aging_into_E[2:n_age, , ]         <- aging_out_of_E[i - 1, j, k]
 E_after_aging[, , ]               <- max(E[i, j, k] + aging_into_E[i, j, k] - aging_out_of_E[i, j, k], 0)
 
 # Infectious (I)
-aging_into_I[2:n_age, , ]         <- if(I[i - 1, j, k] <= 0 || aging_rate[i - 1] <= 0) 0 else (I[i - 1, j, k] * max(min(aging_rate[i - 1], 1), 0))
-aging_out_of_I[1, , ] <- if(I[1, j, k] - aging_into_I[1, 1, k] <= 0 || aging_rate[1] <= 0) 0 else (max(I[1, j, k] - aging_into_I[1, 1, k], 0) * aging_rate[1])
-aging_out_of_I[2:n_age, , ] <- if(I[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else (I[i, j, k] * max(min(aging_rate[i], 1), 0))
+aging_out_of_I[, , ] <- if(I[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else Binomial(I[i, j, k], max(min(aging_rate[i], 1), 0))
+aging_into_I[2:n_age, , ]         <- aging_out_of_I[i - 1, j, k]
 I_after_aging[, , ]               <- max(I[i, j, k] + aging_into_I[i, j, k] - aging_out_of_I[i, j, k], 0)
 
 # Recovered (R)
-aging_into_R[2:n_age, , ]         <- if(R[i - 1, j, k] <= 0 || aging_rate[i - 1] <= 0) 0 else (R[i - 1, j, k] * max(min(aging_rate[i - 1], 1), 0))
-aging_out_of_R[1, , ] <- if(R[1, j, k] - aging_into_R[1, 1, k] <= 0 || aging_rate[1] <= 0) 0 else (max(R[1, j, k] - aging_into_R[1, 1, k], 0) * aging_rate[1])
-aging_out_of_R[2:n_age, , ] <- if(R[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else (R[i, j, k] * max(min(aging_rate[i], 1), 0))
+aging_out_of_R[, , ] <- if(R[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else Binomial(R[i, j, k], max(min(aging_rate[i], 1), 0))
+aging_into_R[2:n_age, , ]         <- aging_out_of_R[i - 1, j, k]
 R_after_aging[, , ]               <- max(R[i, j, k] + aging_into_R[i, j, k] - aging_out_of_R[i, j, k], 0)
 
 # Severe Infectious (Is)
-aging_into_Is[2:n_age, , ]         <- if(Is[i - 1, j, k] <= 0 || aging_rate[i - 1] <= 0) 0 else (Is[i - 1, j, k] * max(min(aging_rate[i - 1], 1), 0))
-aging_out_of_Is[1, , ] <- if(Is[1, j, k] - aging_into_Is[1, 1, k] <= 0 || aging_rate[1] <= 0) 0 else (max(Is[1, j, k] - aging_into_Is[1, 1, k], 0) * aging_rate[1])
-aging_out_of_Is[2:n_age, , ] <- if(Is[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else (Is[i, j, k] * max(min(aging_rate[i], 1), 0))
+aging_out_of_Is[, , ] <- if(Is[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else Binomial(Is[i, j, k], max(min(aging_rate[i], 1), 0))
+aging_into_Is[2:n_age, , ]         <- aging_out_of_Is[i - 1, j, k]
 Is_after_aging[, , ]               <- max(Is[i, j, k] + aging_into_Is[i, j, k] - aging_out_of_Is[i, j, k], 0)
 
 # Recovered with Complications (Rc)
-aging_into_Rc[2:n_age, , ]         <- if(Rc[i - 1, j, k] <= 0 || aging_rate[i - 1] <= 0) 0 else (Rc[i - 1, j, k] * max(min(aging_rate[i - 1], 1), 0))
-aging_out_of_Rc[1, , ] <- if(Rc[1, j, k] - aging_into_Rc[1, 1, k] <= 0 || aging_rate[1] <= 0) 0 else (max(Rc[1, j, k] - aging_into_Rc[1, 1, k], 0) * aging_rate[1])
-aging_out_of_Rc[2:n_age, , ] <- if(Rc[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else (Rc[i, j, k] * max(min(aging_rate[i], 1), 0))
+aging_out_of_Rc[, , ] <- if(Rc[i, j, k] <= 0 || aging_rate[i] <= 0) 0 else Binomial(Rc[i, j, k], max(min(aging_rate[i], 1), 0))
+aging_into_Rc[2:n_age, , ]         <- aging_out_of_Rc[i - 1, j, k]
 Rc_after_aging[, , ]               <- max(Rc[i, j, k] + aging_into_Rc[i, j, k] - aging_out_of_Rc[i, j, k], 0)
 
 # ------------------------------------------------------------------------------
@@ -471,7 +465,7 @@ tt_vaccination_coverage       <- parameter()  # Time points for changing vaccina
 no_vacc_changes               <- parameter()  # Number of vaccination change events
 vaccination_coverage          <- parameter()  # Coverage values over time (dim4 = no_vacc_changes)
 age_vaccination_beta_modifier <- parameter()  # Age & vacc modifier to beta (reduces transmission)
-stochastic_vaccination <- parameter(0)  # Whether vaccination is stochastic (1) or deterministic (0)
+stochastic_vaccination <- parameter(1)  # Whether vaccination is stochastic (1, so that whole people are vaccinated) or deterministic (0)
 
 # -- 6. DEMOGRAPHY (BIRTHS AND DEATHS) --
 crude_death        <- parameter()       # Crude death rate (n_age x n_risk x no_death_changes)

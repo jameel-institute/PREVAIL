@@ -62,6 +62,9 @@ PREVAIL produces can be used directly, and fixes several problems in the model e
 * The model no longer outputs `Reff`. It was the unweighted mean of the age groups' row sums of a next-generation
   matrix, not a reproduction number, and the most expensive calculation in each step. Use
   `effective_reproduction_number()` on the model state.
+* Ageing is drawn from a binomial distribution and vaccination is stochastic by default (`stochastic_vaccination =
+  1`), so whole people move. Before, ageing moved a fixed fraction of each compartment and parts of people were left
+  in E and I that could never recover (the binomial draws truncate them).
 
 ## New functions
 

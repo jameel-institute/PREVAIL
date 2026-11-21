@@ -1,6 +1,6 @@
 Package: PREVAIL
 Title: PRojection of Epidemics and VAccination Impact under Lapses in Coverage
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: 
     person(given = "Arran", 
            family = "Hamlet", 
@@ -39,7 +39,11 @@ Imports:
     collapse,
     scales,
     posterior,
-    monty
+    monty,
+    jsonlite,
+    parallel,
+    stats,
+    utils
 Remotes:
     mrc-ide/dust2,
 LinkingTo:

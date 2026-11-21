@@ -10,8 +10,9 @@
 #' `i`. Collapsing over strata, the reproduction number is the dominant eigenvalue of
 #' \deqn{M_{ij} = R_0 e_i C_{ij}, \quad e_i = \sum_v S_{iv} (1 - m_v)^2 / N_i.}
 #'
-#' The `Reff` output of the model itself is the unweighted mean over age groups of the row sums of a related matrix.
-#' That is not a reproduction number (it reads about 0.5 where measles is endemic) and should not be used as one.
+#' The model itself does not output a reproduction number. Up to 0.2.0 it had a `Reff` output, the unweighted mean
+#' over age groups of the row sums of a related matrix, which is not a reproduction number (it read about 0.5 where
+#' measles is endemic).
 #'
 #' @param S Susceptible population by age group and vaccination stratum (a matrix, or an array with a third
 #'   dimension for risk groups, which is summed over).

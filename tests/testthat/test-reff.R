@@ -22,7 +22,7 @@ test_that("it is the dominant eigenvalue of the next-generation matrix, not a me
   S <- cbind(c(100, 0))  # children all susceptible, adults all immune
   r <- effective_reproduction_number(S, N, 0, C, 10)
   expect_equal(r, 10 * C[1, 1])
-  # the model's own Reff output is the unweighted mean of the age groups' row sums: sum(e_i * C[i, ]) / n_age
+  # the model's old Reff output was the unweighted mean of the age groups' row sums: sum(e_i * C[i, ]) / n_age
   expect_false(isTRUE(all.equal(r, 10 * mean(c(1, 0) * rowSums(C)))))
 })
 
@@ -41,4 +41,9 @@ test_that("immunity shares add up", {
   expect_equal(shares, rep(1, nrow(h$by_age)), tolerance = 1e-8)
   expect_equal(h$by_age$susceptible, h$by_age$susceptible_unvaccinated + h$by_age$susceptible_vaccinated)
   expect_true(h$summary$reff > 0 && h$summary$reff < 15)
+})
+
+test_that("the model no longer has a Reff output", {
+  sys <- dust2::dust_system_create(PREVAIL:::transmission_model(), cached_params("PSE", "measles", 15), n_particles = 1)
+  expect_false("Reff" %in% names(dust2::dust_unpack_index(sys)))
 })

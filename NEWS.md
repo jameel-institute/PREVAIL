@@ -1,7 +1,7 @@
 # PREVAIL 0.2.0
 
 This version rebuilds how the historical inputs (1950 to the present day) are made, so that the starting immunity
-PREVAIL produces can be used directly. The model equations are unchanged.
+PREVAIL produces can be used directly, and fixes several problems in the model equations (below).
 
 * OJ Watson is now the maintainer; Arran Hamlet stays as an author and the package's original creator. Added the
   MIT `LICENSE` file that DESCRIPTION already referred to.
@@ -56,6 +56,12 @@ PREVAIL produces can be used directly. The model equations are unchanged.
 * Seeded cases are placed by age in proportion to the population without random sampling, so the same inputs give
   the same parameters.
 * Windows binaries removed from `src/`.
+
+## Model equations
+
+* The model no longer outputs `Reff`. It was the unweighted mean of the age groups' row sums of a next-generation
+  matrix, not a reproduction number, and the most expensive calculation in each step. Use
+  `effective_reproduction_number()` on the model state.
 
 ## New functions
 

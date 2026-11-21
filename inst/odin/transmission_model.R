@@ -631,20 +631,11 @@ lambda_raw[] <- if (Npop_age[i] <= 0) 0 else sum(lambda_contact[i, ]) / Npop_age
 lambda[, , ] <- if (N <= 0) 0 else
   max(0, lambda_raw[i]) * (1 - age_vaccination_beta_modifier[i, j, k])
 
-# 8. NEXT GENERATION MATRIX AND Reff
-
-# Full NGM matrix elements: S × β × duration × contact
-ngm_unfolded[, , , ] <- S_available[i, k, l] *
-  beta_updated[i, k, l] *
-  infectious_period[i, k, l] *
-  contact_matrix[i, j]
-
-# Age-aggregated NGM contribution (next-generation per age group)
-ngm[] <- if (Npop_age[i] <= 0) 0 else sum(ngm_unfolded[i, , , ]) / Npop_age[i]
-
-# Mean Reff across all age groups
-update(Reff) <- if (n_age <= 0) 0 else sum(ngm) / n_age
-initial(Reff) <- R0[1]
+# 8. Reff
+# The effective reproduction number is not calculated here: it is the dominant eigenvalue of the next generation
+# matrix, which odin cannot compute each step. Use effective_reproduction_number() (or summarise_immunity()) on the
+# model state instead. The Reff output this replaced was the unweighted mean of the age groups' row sums, which is
+# not a reproduction number, and was the most expensive calculation in the update.
 
 # 9. SEEDING
 
@@ -810,8 +801,6 @@ dim(inf_weighted)     <- c(n_age, n_vacc, n_risk)
 dim(infectious_source) <- n_age
 dim(lambda_contact)   <- c(n_age, n_age)
 dim(lambda_raw)       <- n_age
-dim(ngm_unfolded)      <- c(n_age, n_age, n_vacc, n_risk)
-dim(ngm)               <- n_age
 dim(lambda_S) <- c(n_age, n_vacc, n_risk)
 dim(beta_updated) <- c(n_age, n_vacc, n_risk)
 dim(lambda) <- c(n_age, n_vacc, n_risk)

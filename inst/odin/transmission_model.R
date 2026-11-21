@@ -44,7 +44,7 @@ initial(Rc[, , ]) <- 0                     # Recovered with complications: start
 # ------------------------------------------------------------------------------
 # Update the state of each compartment at every timestep, accounting for infection, aging, vaccination, waning, migration, and death.
 # S: Susceptible
-update(S[, , ]) <- max(S[i, j, k] + waning_R[i, j, k] + waning_Rc[i, j, k] + aging_into_S[i, j, k] - aging_out_of_S[i, j, k] - lambda_S[i, j, k] - S_death[i, j, k] + migration_S[i, j, k] * pos_neg_migration + vaccinating_into_S[i, j, k] - vaccinating_out_of_S[i, j, k] + waning_to_S_long[i, j, k] + waning_to_S_unvaccinated[i, j, k] - waning_from_S_short[i, j, k] - waning_from_S_long[i, j, k] - seeded_actual[i, j, k] + waning_to_S_short[i, j, k], 0)
+update(S[, , ]) <- max(S[i, j, k] + waning_R[i, j, k] + waning_Rc[i, j, k] + aging_into_S[i, j, k] - aging_out_of_S[i, j, k] - lambda_S[i, j, k] - S_death[i, j, k] + migration_S[i, j, k] * pos_neg_migration + vaccinating_into_S[i, j, k] - vaccinating_out_of_S[i, j, k] + waning_to_S_long[i, j, k] + waning_to_S_unvaccinated[i, j, k] - waning_from_S_short[i, j, k] - waning_from_S_long[i, j, k] - seeded_actual[i, j, k], 0)
 
 # E: Exposed
 update(E[, , ]) <- max(E[i, j, k] + lambda_S[i, j, k] - incubated[i, j, k] + aging_into_E[i, j, k] - aging_out_of_E[i, j, k] - E_death[i, j, k] + migration_E[i, j, k] * pos_neg_migration + vaccinating_into_E[i, j, k] - vaccinating_out_of_E[i, j, k] + waning_to_E_long[i, j, k] + waning_to_E_unvaccinated[i, j, k] - waning_from_E_short[i, j, k] - waning_from_E_long[i, j, k], 0)
@@ -298,13 +298,10 @@ waning_to_S_long[, 1:(n_vacc - 1), ] <- if (j %% 2 == 0 && j > 1) waning_from_S_
 #Waning occurs if the vaccine comarptment is even, more than 1 j is less than the n_vacc, and there are individuals
 waning_from_S_long[, , ] <- if (j %% 2 == 0 && j > 1 && j <= n_vacc && S_after_vaccination[i, j, k] > 0)
   Binomial(S_after_vaccination[i, j, k], max(min(long_term_waning[j], 1), 0)) else 0
-#Waning to unvaccinated can only come to j = 1, and only from j = 2
-waning_to_S_unvaccinated[, , ] <- if (j == 1 && n_vacc >= 2) waning_from_S_long[i, 2, k] else 0
-waning_to_S_short[, 1:(n_vacc - 1), ] <- if (j %% 2 == 1 && j > 1 && j + 1 <= n_vacc)
-  waning_from_S_long[i, j + 1, k] else 0
+#Waning to unvaccinated can only come to j = 1, from the long-term compartment of any dose (as for the other compartments)
+waning_to_S_unvaccinated[, , ] <- if (j == 1) sum(waning_from_S_long[i, 2:n_vacc, k]) else 0
 S_after_waning[, , ] <- S_after_vaccination[i, j, k] +
-  waning_to_S_long[i, j, k] + waning_to_S_unvaccinated[i, j, k] +
-  waning_to_S_short[i, j, k] -
+  waning_to_S_long[i, j, k] + waning_to_S_unvaccinated[i, j, k] -
   waning_from_S_short[i, j, k] - waning_from_S_long[i, j, k]
 
 # Exposed (E)
@@ -718,8 +715,6 @@ dim(vaccinating_into_Rc)  <- c(n_age, n_vacc, n_risk)
 dim(vaccinating_out_of_Rc) <- c(n_age, n_vacc, n_risk)
 
 # -- 6. WANING TRANSITIONS --
-dim(waning_to_S_short) <- c(n_age, n_vacc, n_risk)
-
 dim(waning_R) <- c(n_age, n_vacc, n_risk)
 dim(waning_Rc) <- c(n_age, n_vacc, n_risk)
 

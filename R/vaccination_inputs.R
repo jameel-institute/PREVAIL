@@ -211,7 +211,7 @@ routine_dose_ages <- function(schedule, n_doses, years) {
 #'
 #' The model has one unvaccinated stratum (1) and two strata per dose. Dose `d` is given into its short-term
 #' stratum (index `2d + 1`), which wanes at `short_term_waning` into its long-term stratum (index `2d`), which in
-#' turn wanes at `long_term_waning` (to the short-term stratum of the previous dose, or to unvaccinated for dose 1).
+#' turn wanes at `long_term_waning` to unvaccinated.
 #' So short-term protection belongs on the odd strata and long-term protection on the even strata.
 #'
 #' In 0.1.0 the two were swapped, the row of the table was chosen by comparing the stratum index (not the dose) with

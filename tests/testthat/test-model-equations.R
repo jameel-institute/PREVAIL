@@ -42,3 +42,19 @@ test_that("the force of infection uses the prevalence in the contacted age group
   attack <- s$E[, 1, 1] / N
   expect_lt(diff(range(attack)) / mean(attack), 0.02)
 })
+
+test_that("long-term vaccine protection wanes to unvaccinated in every compartment", {
+  p <- no_seeding(cached_params("PSE", "measles", 15, vaccine_waning = "table"))
+  p$vaccination_coverage[] <- 0
+  p$R0[] <- 0
+  N <- rowSums(p$S0[, , 1])
+  p$S0[] <- 0
+  p$S0[, 4, 1] <- N  # everyone in the long-term stratum of dose 2
+  sys <- dust2::dust_system_create(PREVAIL:::transmission_model(), p, n_particles = 1, deterministic = TRUE)
+  dust2::dust_system_set_state_initial(sys)
+  dust2::dust_system_run_to_time(sys, 30)
+  s <- dust2::dust_unpack_state(sys, dust2::dust_system_state(sys))
+  expect_gt(sum(s$S[-1, 1, 1]), 0)
+  # not back to the short-term stratum of dose 1, which has more protection than where they came from
+  expect_equal(sum(s$S[, 3, 1]), 0)
+})

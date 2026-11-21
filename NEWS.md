@@ -70,6 +70,10 @@ PREVAIL produces can be used directly, and fixes several problems in the model e
   divided by the population of the susceptible's own age group (`N_i`), so small age groups (the elderly) faced a
   force of infection several times too high and large ones too low. The reproduction number is unchanged (the two
   next-generation matrices have the same eigenvalue); who gets infected is not.
+* Susceptibles in the long-term stratum of a dose wane to unvaccinated, as the other compartments already did and
+  as the model's comments describe. Before, S alone went from the long-term stratum of dose `d` to the short-term
+  stratum of dose `d - 1`, which has more protection (measles 93% after 90%). This only matters where vaccine
+  protection wanes (diphtheria and pertussis by default).
 
 ## New functions
 

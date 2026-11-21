@@ -33,10 +33,11 @@ sum of two rows (a protection of 1.75), and a single waning rate (the slowest in
 stratum.
 
 The table has two rows of doses per disease (measles 1 and 2; diphtheria 1 and 6; pertussis 3 and 5) while the
-model has two measles doses and three DTP doses. The final modelled dose uses the last row of the table (read as
-the complete course) and earlier doses use their own row if there is one and the first row otherwise. For
-measles that is simply dose 1 and dose 2. For DTP it is a judgement, because the table does not say which
-modelled doses its rows are meant for: it keeps the rows 0.1.0 in effect used for the first and third doses and
-gives the second dose the first row.
+model has two measles doses and three DTP doses. Each modelled dose uses its own row if there is one and the
+first row otherwise. For measles that is simply dose 1 and dose 2. For DTP the `dose` tag is the number of doses
+received when the estimate applies: the first row (diphtheria 1, pertussis 3) is the three-dose primary series and
+the second (diphtheria 6, pertussis 5) the full schedule including boosters, which the model does not represent.
+So all three DTP doses get the primary-series row. That overstates protection after one or two doses; values for
+partial courses belong in the table as their own rows (with `dose` 1 and 2), not in code.
 }
 \keyword{internal}

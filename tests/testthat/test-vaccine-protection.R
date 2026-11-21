@@ -49,15 +49,14 @@ test_that("measles vaccine protection does not wane by default, and the table is
   expect_true(all(d$short_term_waning[c(3, 5, 7)] > 0))
 })
 
-test_that("the final DTP dose uses the last row of the table and earlier doses the first", {
+test_that("every DTP dose uses the primary series row of the table", {
   for (disease in c("diphtheria", "pertussis")) {
     vp <- PREVAIL::vaccine_parameters[PREVAIL::vaccine_parameters$disease == disease, ]
     s <- PREVAIL:::vaccine_strata_parameters(vp, 7, vaccine_waning = TRUE)
-    rows <- sort(unique(vp$dose))
-    expect_equal(s$table$table_dose, c(rows[1], rows[1], rows[2]), info = disease)
-    first <- vp$value[vp$dose == rows[1] & vp$parameter == "short_term_protection"]
-    last <- vp$value[vp$dose == rows[2] & vp$parameter == "short_term_protection"]
-    expect_equal(s$protection[c(3, 5, 7)], c(first, first, last), info = disease)
+    first <- min(vp$dose)
+    expect_equal(s$table$table_dose, rep(first, 3), info = disease)
+    protection <- vp$value[vp$dose == first & vp$parameter == "short_term_protection"]
+    expect_equal(s$protection[c(3, 5, 7)], rep(protection, 3), info = disease)
   }
 })
 

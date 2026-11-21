@@ -91,15 +91,41 @@ is from 1950 to 2023, and the default of "" uses the entire dataset.
 
 **year_end** - The final year of data to input into the model. This
 determines the data to load into the model, and allows us to replicate
-historical patterns in demography, vaccination and infection. The range
-is from 1950 to 2023, and the default of "" uses the entire dataset.
+historical patterns in demography, vaccination and infection. The default
+of "" is the current year. Demographic data (UN WPP) end in 2023 and are
+carried forward from their last year, as is routine vaccination coverage.
 This must be equal to or larger than `year_start = .`
 
-**WHO_seed_switch** - If FALSE, the model allows for dynamic disease
-transmission throughout the entire period. If TRUE, the model allows for
-dynamic disease transmission prior to 1980 (when WHO cases are not
-available), but from 1980 onwards, it matches annual cases to the number
-reported to the WHO. This allows the user to replicate reported cases.
+**transmission_history** - The assumption about how reported cases relate
+to true infections over the historical period. WHO case reports under-count
+infections in most settings, and by how much is not known, so the history
+has to be run under a stated assumption:
+
+-   `"circulating_years"` (the default): reported cases are taken as
+    evidence of whether the disease was circulating, not of how many
+    infections there were. Transmission is on in every year with at
+    least `circulation_threshold` (2) reported cases per million people,
+    and before reporting starts in 1980, and off otherwise. Pertussis is
+    treated as circulating every year.
+-   `"reported_cases_only"`: case reporting is taken to be complete.
+    Transmission runs until the first year with a reported case and is
+    then switched off, and from then on the only infections are the
+    reported cases. This was the behaviour of PREVAIL 0.1.0.
+-   `"endemic"`: transmission is on throughout.
+
+**reporting_fraction** - The share of infections that are reported
+(default 1). Seeded infections are the reported cases divided by this.
+
+**coverage_accuracy** - A multiplier on the odds of being vaccinated, for
+when true coverage is thought to differ from reported coverage. The
+default of 1 takes reported coverage at face value.
+
+**vaccine_waning** - `"default"` uses the vaccine parameter table for
+diphtheria and pertussis and no waning of vaccine protection for measles;
+`"table"` uses the table for every disease; `"none"` switches waning off.
+
+**WHO_seed_switch** - Kept for older code. `FALSE` is the same as
+`transmission_history = "endemic"`.
 
 **aggregate_age** - If TRUE, the model aggregates the baseline single
 year age groups of 0-100, to the values specified in `new_age_breaks =`.
@@ -130,9 +156,10 @@ params <- data_load_process_wrapper(
   # Must be equal to or after year_start.
   year_end = "",
 
-  # If TRUE, uses WHO-reported annual case data from 1980 onward to seed the model.
-  # If FALSE, allows fully dynamic transmission throughout.
-  WHO_seed_switch = TRUE,
+  # How reported cases relate to true infections over the historical period.
+  # "circulating_years": transmission is on in years the disease was evidently circulating.
+  # "reported_cases_only": reporting is complete; only reported cases occur from the first report on.
+  transmission_history = "circulating_years",
 
   # Whether to aggregate single-year age groups (0–100) into larger age bands.
   aggregate_age = TRUE,
@@ -275,7 +302,8 @@ knitr::include_graphics("vignette_img/vignette_plot_5.jpg", error = FALSE)
 ```
 
 Cumulative cases over time. Note the rapid flattening after widespread
-vaccination and when cases are switched due to `WHO_seed_switch = TRUE`.
+vaccination. (The figure was made with `transmission_history = "reported_cases_only"`,
+where from 1980 the only cases are those reported to WHO.)
 
 ```{r , echo=FALSE, out.width = '75%', out.height = '75%'}
 knitr::include_graphics("vignette_img/vignette_plot_3.jpg", error = FALSE)

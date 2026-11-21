@@ -87,7 +87,7 @@ Once the packages are loaded, we can begin preparing our two key inputs:
 
 The object `custom_disease_data` is used to provide an exact match to WHO reported cases from 1980 (the earliest data is available) in order to replicate trends in immunity seen at the current time point.
 
-This data is also used as a switch, where if `WHO_seed_switch = TRUE`, then dynamic disease transmission is turned off at the time of the first data point, and the cases that occur in the model are provided by this dataset.
+How this data is used depends on `transmission_history`. With `"circulating_years"` (the default) transmission is on in years with at least two reported cases per million people (and before the first data point) and off in years with fewer, and the reported cases are introduced at the start of each year. With `"reported_cases_only"` dynamic disease transmission is turned off at the time of the first data point, and the cases that occur in the model are provided by this dataset.
 
 To create our custom data.frame, we need to specify two columns
 

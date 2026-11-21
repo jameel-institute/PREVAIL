@@ -101,6 +101,9 @@ chosen with `transmission_history`:
   This is the assumption PREVAIL 0.1.0 made, with `reporting_fraction = 1`.}
 }
 
+Seeded infections enter the exposed compartment, placed across ages and vaccination strata in proportion to the
+effective number of susceptibles on the day.
+
 `reporting_fraction` is where an estimated reporting level slots in: seeded infections are the reported cases
 divided by it. It can be a single number or a vector named by year (years without a name take the value of the
 nearest named year).

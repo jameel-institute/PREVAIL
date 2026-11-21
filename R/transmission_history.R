@@ -23,6 +23,9 @@
 #'   This is the assumption PREVAIL 0.1.0 made, with `reporting_fraction = 1`.}
 #' }
 #'
+#' Seeded infections enter the exposed compartment, placed across ages and vaccination strata in proportion to the
+#' effective number of susceptibles on the day.
+#'
 #' `reporting_fraction` is where an estimated reporting level slots in: seeded infections are the reported cases
 #' divided by it. It can be a single number or a vector named by year (years without a name take the value of the
 #' nearest named year).
@@ -103,7 +106,8 @@ build_transmission_history <- function(case_reports, population, years, R0, dise
     initial_daily_seed <- 0
   }
 
-  # Seeded infections: a one-day pulse on the first day of the year, placed by age in proportion to the population
+  # Seeded infections: a one-day pulse on the first day of the year, placed by age in proportion to the population.
+  # Only the total matters to the model, which places them on susceptibles (see the seeding block in the odin code)
   n_single_age <- ncol(population)
   none <- rep(0, n_single_age)
   times <- 0

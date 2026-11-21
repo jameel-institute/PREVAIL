@@ -47,10 +47,10 @@ initial(Rc[, , ]) <- 0                     # Recovered with complications: start
 update(S[, , ]) <- max(S[i, j, k] + waning_R[i, j, k] + waning_Rc[i, j, k] + aging_into_S[i, j, k] - aging_out_of_S[i, j, k] - lambda_S[i, j, k] - S_death[i, j, k] + migration_S[i, j, k] * pos_neg_migration + vaccinating_into_S[i, j, k] - vaccinating_out_of_S[i, j, k] + waning_to_S_long[i, j, k] + waning_to_S_unvaccinated[i, j, k] - waning_from_S_short[i, j, k] - waning_from_S_long[i, j, k] - seeded_actual[i, j, k], 0)
 
 # E: Exposed
-update(E[, , ]) <- max(E[i, j, k] + lambda_S[i, j, k] - incubated[i, j, k] + aging_into_E[i, j, k] - aging_out_of_E[i, j, k] - E_death[i, j, k] + migration_E[i, j, k] * pos_neg_migration + vaccinating_into_E[i, j, k] - vaccinating_out_of_E[i, j, k] + waning_to_E_long[i, j, k] + waning_to_E_unvaccinated[i, j, k] - waning_from_E_short[i, j, k] - waning_from_E_long[i, j, k], 0)
+update(E[, , ]) <- max(E[i, j, k] + lambda_S[i, j, k] + seeded_actual[i, j, k] - incubated[i, j, k] + aging_into_E[i, j, k] - aging_out_of_E[i, j, k] - E_death[i, j, k] + migration_E[i, j, k] * pos_neg_migration + vaccinating_into_E[i, j, k] - vaccinating_out_of_E[i, j, k] + waning_to_E_long[i, j, k] + waning_to_E_unvaccinated[i, j, k] - waning_from_E_short[i, j, k] - waning_from_E_long[i, j, k], 0)
 
 # I: Infectious (non-severe)
-update(I[, , ]) <- max(I[i, j, k] + into_I[i, j, k] + aging_into_I[i, j, k] - aging_out_of_I[i, j, k] - recovered_I_to_R[i, j, k] - I_death[i, j, k] + seeded_actual[i, j, k] + migration_I[i, j, k] * pos_neg_migration + vaccinating_into_I[i, j, k] - vaccinating_out_of_I[i, j, k] + waning_to_I_long[i, j, k] + waning_to_I_unvaccinated[i, j, k] - waning_from_I_short[i, j, k] - waning_from_I_long[i, j, k], 0)
+update(I[, , ]) <- max(I[i, j, k] + into_I[i, j, k] + aging_into_I[i, j, k] - aging_out_of_I[i, j, k] - recovered_I_to_R[i, j, k] - I_death[i, j, k] + migration_I[i, j, k] * pos_neg_migration + vaccinating_into_I[i, j, k] - vaccinating_out_of_I[i, j, k] + waning_to_I_long[i, j, k] + waning_to_I_unvaccinated[i, j, k] - waning_from_I_short[i, j, k] - waning_from_I_long[i, j, k], 0)
 
 # R: Recovered (non-severe)
 update(R[, , ]) <- max(R[i, j, k] + recovered_I_to_R[i, j, k] + recovered_Is_to_R[i, j, k] - waning_R[i, j, k] + aging_into_R[i, j, k] - aging_out_of_R[i, j, k] - R_death[i, j, k] + migration_R[i, j, k] * pos_neg_migration + vaccinating_into_R[i, j, k] - vaccinating_out_of_R[i, j, k] + waning_to_R_long[i, j, k] + waning_to_R_unvaccinated[i, j, k] - waning_from_R_short[i, j, k] - waning_from_R_long[i, j, k], 0)
@@ -636,10 +636,16 @@ lambda[, , ] <- if (N <= 0) 0 else if (i <= age_maternal_protection_ends)
 # Interpolate seeding pattern over time
 t_seeded <- interpolate(tt_seeded, seeded, "constant")
 
-# Capped seeding into S → I: no more than susceptible
-seeded_actual[, , ] <- if (S[i, j, k] < t_seeded[i, j, k])
-  (S[i, j, k] * reporting_rate) else
-    (t_seeded[i, j, k] * reporting_rate)
+# Seeded infections S → E. The number seeded is the total over the seeding array; they are placed across ages and
+# vaccination strata in proportion to the (effective) susceptibles left after today's infections and deaths, since
+# an introduced infection can only land on someone susceptible. Placing them by population share, only in the
+# unvaccinated stratum and capped at who was there, left many of them unplaced
+seeds_total <- sum(t_seeded) * reporting_rate
+S_left[, , ] <- max(S_available[i, j, k] - lambda_S[i, j, k] - S_death[i, j, k], 0)
+seed_weight[, , ] <- S_left[i, j, k] * (1 - age_vaccination_beta_modifier[i, j, k])
+seed_weight_total <- sum(seed_weight)
+seeded_actual[, , ] <- if (seeds_total <= 0 || seed_weight[i, j, k] <= 0) 0 else
+  min(Binomial(seeds_total, max(min(seed_weight[i, j, k] / seed_weight_total, 1), 0)), S_left[i, j, k])
 
 # ------------------------------------------------------------------------------
 # DIMENSIONS — Explicitly define array shapes for all variables
@@ -809,6 +815,8 @@ dim(contact_matrix) <- c(n_age, n_age)
 
 # -- 10. SEEDING & FITTING OUTPUTS --
 dim(seeded_actual)    <- c(n_age, n_vacc, n_risk)
+dim(S_left)           <- c(n_age, n_vacc, n_risk)
+dim(seed_weight)      <- c(n_age, n_vacc, n_risk)
 dim(seropositive)     <- n_age
 dim(serosurvey)       <- n_age
 dim(incubated) <- c(n_age, n_vacc, n_risk)
@@ -883,7 +891,8 @@ initial(total_deaths) <- 0
 # ------------------------------------------------------------------------------
 
 # -- New infections (used for output) --
-update(new_case[, , ]) <- incubated[i, j, k] + seeded_actual[i, j, k]
+# Seeded infections pass through E, so they are counted here when they become infectious
+update(new_case[, , ]) <- incubated[i, j, k]
 initial(new_case[, , ]) <- I0[i, j, k]
 dim(new_case) <- c(n_age, n_vacc, n_risk)
 

@@ -88,3 +88,23 @@ test_that("maternal antibodies protect infants", {
   expect_equal(half[["infants"]] / none[["infants"]], 0.5, tolerance = 1e-6)
   expect_equal(half[["older"]], none[["older"]])
 })
+
+test_that("seeded infections are all placed, on susceptibles, and pass through E", {
+  p <- cached_params("PSE", "measles", 15)
+  p$R0[] <- 0
+  p$I0[] <- 0
+  p$seeded <- array(0, c(p$n_age, p$n_vacc, p$n_risk, 2))
+  p$seeded[1, 1, 1, 1] <- 100
+  p$tt_seeded <- c(0, 1)
+  p$no_seeded_changes <- 2
+  sys <- dust2::dust_system_create(PREVAIL:::transmission_model(), p, n_particles = 1, deterministic = TRUE)
+  dust2::dust_system_set_state_initial(sys)
+  dust2::dust_system_run_to_time(sys, 1)
+  s <- dust2::dust_unpack_state(sys, dust2::dust_system_state(sys))
+  expect_equal(sum(s$E), 100, tolerance = 1e-8)
+  expect_equal(sum(s$I) + sum(s$Is), 0)
+  # placed by susceptibility, not all in the age group and stratum they were given in
+  expect_gt(sum(s$E[-1, , ]), 0)
+  expect_equal(as.numeric(s$E), as.numeric(100 * p$S0 * (1 - p$age_vaccination_beta_modifier) /
+                                             sum(p$S0 * (1 - p$age_vaccination_beta_modifier))), tolerance = 0.02)
+})

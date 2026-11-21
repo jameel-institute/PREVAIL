@@ -23,5 +23,6 @@ utils::globalVariables(c(
   "dist", "duration",
   "group_pop", "in_repro", "introduction_year", "iteration",
   "migration_rate_1000", "na.omit",
-  "repro_pop", "row_id", "serodata", "variable"
+  "repro_pop", "row_id", "serodata", "variable",
+  "coverage_category", "has_wuenic"
 ))

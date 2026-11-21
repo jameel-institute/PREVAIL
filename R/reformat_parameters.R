@@ -19,12 +19,12 @@ reformat_parameters <- function(
 
   type <- match.arg(type)
   if (type == "vaccine") {
-    custom_parameters %>%
-      dplyr::mutate(type = "custom") %>%
-      dplyr::rename(mean = value) %>%
-      dplyr::bind_rows(default_parameters %>%
-                         dplyr::mutate(type = "default")) %>%
+    # Custom rows are named as the default table names them (for example "short_term_protection") and keep their
+    # values in `value`, the column the rest of the pipeline reads. (In 0.1.0 the custom values were moved to a
+    # column called `mean` and the default rows were renamed, so custom vaccine parameters reached the model as NA.)
+    custom <- custom_parameters %>%
       dplyr::mutate(
+        type = "custom",
         vaccine = disease,
         disease = disease,
         unit = dplyr::case_when(
@@ -33,7 +33,11 @@ reformat_parameters <- function(
           TRUE ~ NA_character_
         ),
         parameter = paste(duration, "term", parameter, sep = "_")
-      ) %>%
+      )
+
+    custom %>%
+      dplyr::bind_rows(default_parameters %>%
+                         dplyr::mutate(type = "default")) %>%
       group_by(parameter) %>%
       filter(!(type == "default" & any(type == "custom"))) %>%
       ungroup()

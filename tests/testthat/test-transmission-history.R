@@ -79,8 +79,11 @@ test_that("the default follows the years the disease was circulating", {
   expect_false(on[p$history$transmission$year == 2021])
 })
 
-test_that("WHO_seed_switch = FALSE still means transmission throughout", {
-  p <- data_load_process_wrapper("PSE", "measles", R0 = 15, year_end = 2025, WHO_seed_switch = FALSE)
+test_that("WHO_seed_switch = FALSE still means transmission throughout, with a warning", {
+  expect_warning(p <- data_load_process_wrapper("PSE", "measles", R0 = 15, year_end = 2025, WHO_seed_switch = FALSE),
+                 "deprecated")
   expect_true(all(p$R0 == 15))
-  expect_equal(p$input_data$transmission_history, "endemic")
+  expect_equal(p$input_data$transmission_history, "circulating_years")
+  expect_equal(p$input_data$circulation_threshold, 0)
+  expect_error(data_load_process_wrapper("PSE", "measles", R0 = 15, transmission_history = "endemic"))
 })

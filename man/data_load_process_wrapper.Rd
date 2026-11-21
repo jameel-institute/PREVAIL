@@ -15,7 +15,7 @@ data_load_process_wrapper(
   aggregate_age = TRUE,
   new_age_breaks = c(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
     Inf),
-  transmission_history = c("circulating_years", "reported_cases_only", "endemic"),
+  transmission_history = c("circulating_years", "reported_cases_only"),
   circulation_threshold = 2,
   reporting_fraction = 1,
   coverage_accuracy = 1,
@@ -37,7 +37,8 @@ data_load_process_wrapper(
 
 \item{year_end}{Optional numeric value specifying the last year of the simulation window. Default ("") uses the latest available data year.}
 
-\item{WHO_seed_switch}{Retained for compatibility. `FALSE` is the same as `transmission_history = "endemic"`.}
+\item{WHO_seed_switch}{Deprecated. `FALSE` is now `transmission_history = "circulating_years"` with
+`circulation_threshold = 0` (transmission on throughout).}
 
 \item{aggregate_age}{Logical indicating whether to aggregate data from single-year age groups into custom age intervals (default is `TRUE`).}
 
@@ -45,10 +46,10 @@ data_load_process_wrapper(
 
 \item{transmission_history}{The assumption about how reported cases relate to true infections over the
 historical period: `"circulating_years"` (default), `"reported_cases_only"` (the assumption 0.1.0 made: case
-reporting is complete) or `"endemic"`. See the section below.}
+reporting is complete). See the section below.}
 
 \item{circulation_threshold}{Under `"circulating_years"`, the reported cases per million people per year at or
-above which the disease is taken to be circulating. Default 2.}
+above which the disease is taken to be circulating. Default 2; 0 keeps transmission on throughout.}
 
 \item{reporting_fraction}{Share of infections that are reported, used to scale the seeded infections (reported
 cases divided by this). A single number, or a vector named by year. Default 1.}
@@ -62,8 +63,7 @@ diseases), `"table"` (the table for every disease, as in 0.1.0) or `"none"`. See
 
 \item{coverage_source}{`"wuenic"` (default) or `"median"`; see [process_vaccination_routine()].}
 
-\item{seed_floor}{Minimum number of infections introduced each year under `"circulating_years"` and `"endemic"`.
-Default 10.}
+\item{seed_floor}{Minimum number of infections introduced each year under `"circulating_years"`. Default 10.}
 }
 \value{
 A named list containing structured parameters ready for use in the PREVAIL dynamic transmission model.
@@ -93,12 +93,12 @@ chosen with `transmission_history`:
   in years with fewer. A year with no report keeps the status of the year before. Pertussis is treated as
   circulating in every year, because it circulates everywhere whether or not it is reported. Reported cases
   (divided by `reporting_fraction`), and never fewer than `seed_floor` infections, are introduced on the first day
-  of each year so that infection can return after fade-out. The number of infections is whatever the model implies.}
+  of each year so that infection can return after fade-out. The number of infections is whatever the model implies.
+  With `circulation_threshold = 0` transmission is on throughout (what `WHO_seed_switch = FALSE` meant in 0.1.0).}
   \item{`"reported_cases_only"`}{Case reporting and reported vaccination are taken as complete. Transmission runs
   at `R0` until the first year with a reported case and is switched off from then on; after that the only
   infections are the reported cases (divided by `reporting_fraction`), introduced on the first day of each year.
   This is the assumption PREVAIL 0.1.0 made, with `reporting_fraction = 1`.}
-  \item{`"endemic"`}{Transmission is on at `R0` throughout, with the same seeding as `"circulating_years"`.}
 }
 
 `reporting_fraction` is where an estimated reporting level slots in: seeded infections are the reported cases

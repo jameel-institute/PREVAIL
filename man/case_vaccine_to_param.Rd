@@ -13,7 +13,6 @@ case_vaccine_to_param(
   vaccination_pre1980,
   vaccine_parameters,
   disease_parameters,
-  WHO_seed_switch = TRUE,
   custom_routine_vaccination = NA,
   custom_sia_vaccination = NA,
   disease = NULL,
@@ -43,8 +42,6 @@ case_vaccine_to_param(
 \item{vaccine_parameters}{Data frame of vaccination parameters.}
 
 \item{disease_parameters}{Data frame of disease parameters.}
-
-\item{WHO_seed_switch}{Retained for compatibility. `FALSE` is the same as `transmission_history = "endemic"`.}
 
 \item{custom_routine_vaccination}{Data frame or NA indicating custom routine vaccination.}
 

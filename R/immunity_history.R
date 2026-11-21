@@ -188,7 +188,7 @@ summarise_immunity <- function(state, params, R0) {
 #' }
 #' @export
 run_immunity_history <- function(iso, disease, R0,
-                                 transmission_history = c("circulating_years", "reported_cases_only", "endemic"),
+                                 transmission_history = c("circulating_years", "reported_cases_only"),
                                  circulation_threshold = 2,
                                  reporting_fraction = 1,
                                  coverage_accuracy = 1,

@@ -18,14 +18,15 @@
 #' @param cfr_off Logical; Sets the CFR to zero. Used when calculating current susceptibility as prior mortality rates will already include disease specific mortality.
 #' @param year_start Optional numeric value specifying the first year of the simulation window. Default ("") uses the earliest available data year.
 #' @param year_end Optional numeric value specifying the last year of the simulation window. Default ("") uses the latest available data year.
-#' @param WHO_seed_switch Retained for compatibility. `FALSE` is the same as `transmission_history = "endemic"`.
+#' @param WHO_seed_switch Deprecated. `FALSE` (transmission throughout, as in 0.1.0) is now
+#'   `transmission_history = "circulating_years"` with `circulation_threshold = 0`, and gives a warning.
 #' @param aggregate_age Logical; aggregate data from single-year age groups into custom intervals (default TRUE).
 #' @param new_age_breaks Numeric vector; breakpoints for age group aggregation. Default is c(0, 5, ..., Inf).
 #' @param transmission_history The assumption about how reported cases relate to true infections over the
 #'   historical period: `"circulating_years"` (default), `"reported_cases_only"` (the assumption 0.1.0 made: case
-#'   reporting is complete) or `"endemic"`. See the section below.
+#'   reporting is complete). See the section below.
 #' @param circulation_threshold Under `"circulating_years"`, the reported cases per million people per year at or
-#'   above which the disease is taken to be circulating. Default 2.
+#'   above which the disease is taken to be circulating. Default 2; 0 keeps transmission on throughout.
 #' @param reporting_fraction Share of infections that are reported, used to scale the seeded infections (reported
 #'   cases divided by this). A single number, or a vector named by year. Default 1.
 #' @param coverage_accuracy Multiplier on the odds of being vaccinated, to represent true coverage differing from
@@ -34,8 +35,7 @@
 #' @param vaccine_waning `"default"` (no waning of measles vaccine protection; the vaccine parameter table for other
 #'   diseases), `"table"` (the table for every disease, as in 0.1.0) or `"none"`. See [resolve_vaccine_waning()].
 #' @param coverage_source `"wuenic"` (default) or `"median"`; see [process_vaccination_routine()].
-#' @param seed_floor Minimum number of infections introduced each year under `"circulating_years"` and `"endemic"`.
-#'   Default 10.
+#' @param seed_floor Minimum number of infections introduced each year under `"circulating_years"`. Default 10.
 #'
 #' @param custom_migration Optional. Data frame to override default migration data.
 #' @param custom_fertility Optional. Data frame to override default fertility data.
@@ -77,7 +77,7 @@ custom_data_process_wrapper <- function(
     WHO_seed_switch = TRUE,
     aggregate_age = TRUE,
     new_age_breaks = c(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, Inf),
-    transmission_history = c("circulating_years", "reported_cases_only", "endemic"),
+    transmission_history = c("circulating_years", "reported_cases_only"),
     circulation_threshold = 2,
     reporting_fraction = 1,
     coverage_accuracy = 1,
@@ -99,7 +99,11 @@ custom_data_process_wrapper <- function(
 
   transmission_history <- match.arg(transmission_history)
   coverage_source <- match.arg(coverage_source)
-  if (!isTRUE(WHO_seed_switch)) transmission_history <- "endemic"
+  if (!isTRUE(WHO_seed_switch)) {
+    warning("WHO_seed_switch is deprecated: WHO_seed_switch = FALSE is now transmission_history = \"circulating_years\" with circulation_threshold = 0")
+    transmission_history <- "circulating_years"
+    circulation_threshold <- 0
+  }
   if (length(R0) != 1) stop("R0 must be a single number; its changes over time are set by transmission_history")
   if (length(coverage_accuracy) != 1 || !is.finite(coverage_accuracy) || coverage_accuracy <= 0) {
     stop("coverage_accuracy must be a single positive number")
@@ -167,7 +171,6 @@ custom_data_process_wrapper <- function(
     vaccination_pre1980 = datasets$pre1980,
     vaccine_parameters = datasets$vaccine_parameters,
     disease_parameters = datasets$disease_parameters,
-    WHO_seed_switch = WHO_seed_switch,
     custom_routine_vaccination = custom_routine_vaccination,
     custom_sia_vaccination = custom_sia_vaccination,
     disease = disease,

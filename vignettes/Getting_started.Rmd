@@ -111,7 +111,8 @@ has to be run under a stated assumption:
     Transmission runs until the first year with a reported case and is
     then switched off, and from then on the only infections are the
     reported cases. This was the behaviour of PREVAIL 0.1.0.
--   `"endemic"`: transmission is on throughout.
+
+Setting `circulation_threshold = 0` keeps transmission on throughout.
 
 **reporting_fraction** - The share of infections that are reported
 (default 1). Seeded infections are the reported cases divided by this.
@@ -124,8 +125,9 @@ default of 1 takes reported coverage at face value.
 diphtheria and pertussis and no waning of vaccine protection for measles;
 `"table"` uses the table for every disease; `"none"` switches waning off.
 
-**WHO_seed_switch** - Kept for older code. `FALSE` is the same as
-`transmission_history = "endemic"`.
+**WHO_seed_switch** - Deprecated. `FALSE` (transmission throughout) is
+now `transmission_history = "circulating_years"` with
+`circulation_threshold = 0`.
 
 **aggregate_age** - If TRUE, the model aggregates the baseline single
 year age groups of 0-100, to the values specified in `new_age_breaks =`.

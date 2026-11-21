@@ -14,7 +14,8 @@ PREVAIL produces can be used directly. The model equations are unchanged.
     as circulating every year.
   * `"reported_cases_only"`: case reporting is taken to be complete. Transmission is switched off at the first
     reported case and only reported cases are seeded. This is what 0.1.0 did.
-  * `"endemic"`: transmission on throughout. `WHO_seed_switch = FALSE` now means this.
+* `circulation_threshold = 0` keeps transmission on throughout. `WHO_seed_switch` is deprecated: `FALSE` now means
+  this, with a warning.
 * New argument `reporting_fraction` (default 1): seeded infections are the reported cases divided by it. This is
   where an estimated reporting level can slot in later.
 * New argument `coverage_accuracy` (default 1): a multiplier on the odds of being vaccinated.
@@ -48,6 +49,10 @@ PREVAIL produces can be used directly. The model equations are unchanged.
 * Case fatality ratios are converted to daily probabilities of death, and the proportion of severe cases with
   complications uses its own row of the disease parameter table.
 * Custom vaccine parameters reach the model (they arrived as `NA`).
+* All three DTP doses use the primary-series row of the vaccine table (diphtheria `dose` 1, pertussis `dose` 3).
+  The second row (diphtheria 6, pertussis 5) is protection after the full schedule with boosters, which the model
+  does not represent. Doses 1 and 2 therefore get primary-series protection, which overstates it; partial-course
+  values belong in the table as their own rows.
 * Seeded cases are placed by age in proportion to the population without random sampling, so the same inputs give
   the same parameters.
 * Windows binaries removed from `src/`.

@@ -12,7 +12,8 @@
 #' @param cfr_off Logical; Sets the CFR to zero. Used when calculating current susceptibility as prior mortality rates will already include disease specific mortality.
 #' @param year_start Optional numeric value specifying the first year of the simulation window. Default ("") uses the earliest available data year.
 #' @param year_end Optional numeric value specifying the last year of the simulation window. Default ("") uses the latest available data year.
-#' @param WHO_seed_switch Retained for compatibility. `FALSE` is the same as `transmission_history = "endemic"`.
+#' @param WHO_seed_switch Deprecated. `FALSE` is now `transmission_history = "circulating_years"` with
+#'   `circulation_threshold = 0` (transmission on throughout).
 #' @param aggregate_age Logical indicating whether to aggregate data from single-year age groups into custom age intervals (default is `TRUE`).
 #' @param new_age_breaks Numeric vector specifying the breakpoints used to aggregate single-year age groups into broader age bands. Default is `c(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, Inf)`.
 #'
@@ -38,7 +39,7 @@ data_load_process_wrapper <- function(
     WHO_seed_switch = TRUE,
     aggregate_age = TRUE,
     new_age_breaks = c(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, Inf),
-    transmission_history = c("circulating_years", "reported_cases_only", "endemic"),
+    transmission_history = c("circulating_years", "reported_cases_only"),
     circulation_threshold = 2,
     reporting_fraction = 1,
     coverage_accuracy = 1,

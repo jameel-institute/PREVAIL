@@ -85,7 +85,7 @@ test_that("coverage read back from a model run matches the coverage put in", {
   )
   no_campaigns <- data.frame(year = 2000, age = 1, dose = 1, coverage = 0)
   h <- run_immunity_history(
-    "GBR", "measles", R0 = 0, transmission_history = "endemic", seed_floor = 0, year_end = 2025,
+    "GBR", "measles", R0 = 0, circulation_threshold = 0, seed_floor = 0, year_end = 2025,
     custom_routine_vaccination = routine, custom_sia_vaccination = no_campaigns
   )
   cov <- h$coverage

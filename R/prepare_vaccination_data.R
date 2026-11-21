@@ -77,7 +77,6 @@ expand_pre1980_vaccination <- function(processed_vaccination, vaccination_pre198
 #' @param vaccination_pre1980 Data frame of historical vaccination introduction assumptions.
 #' @param vaccine_parameters Data frame of vaccination parameters.
 #' @param disease_parameters Data frame of disease parameters.
-#' @param WHO_seed_switch Retained for compatibility. `FALSE` is the same as `transmission_history = "endemic"`.
 #' @param custom_routine_vaccination Data frame or NA indicating custom routine vaccination.
 #' @param custom_sia_vaccination Data frame or NA indicating custom sia vaccination.
 #' @param disease Disease name. If `NULL` it is taken from the case data.
@@ -103,7 +102,6 @@ case_vaccine_to_param <- function(
     vaccination_pre1980,
     vaccine_parameters,
     disease_parameters,
-    WHO_seed_switch = TRUE,
     custom_routine_vaccination = NA,
     custom_sia_vaccination = NA,
     disease = NULL,
@@ -200,8 +198,6 @@ case_vaccine_to_param <- function(
     base::as.numeric() * 365
 
   # ---- Transmission and seeding ----
-  if (!isTRUE(WHO_seed_switch)) transmission_history <- "endemic"
-
   history <- build_transmission_history(
     case_reports = processed_case_reports,
     population = demog_data$population_data,

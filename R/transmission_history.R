@@ -15,12 +15,12 @@
 #'   in years with fewer. A year with no report keeps the status of the year before. Pertussis is treated as
 #'   circulating in every year, because it circulates everywhere whether or not it is reported. Reported cases
 #'   (divided by `reporting_fraction`), and never fewer than `seed_floor` infections, are introduced on the first day
-#'   of each year so that infection can return after fade-out. The number of infections is whatever the model implies.}
+#'   of each year so that infection can return after fade-out. The number of infections is whatever the model implies.
+#'   With `circulation_threshold = 0` transmission is on throughout (what `WHO_seed_switch = FALSE` meant in 0.1.0).}
 #'   \item{`"reported_cases_only"`}{Case reporting and reported vaccination are taken as complete. Transmission runs
 #'   at `R0` until the first year with a reported case and is switched off from then on; after that the only
 #'   infections are the reported cases (divided by `reporting_fraction`), introduced on the first day of each year.
 #'   This is the assumption PREVAIL 0.1.0 made, with `reporting_fraction = 1`.}
-#'   \item{`"endemic"`}{Transmission is on at `R0` throughout, with the same seeding as `"circulating_years"`.}
 #' }
 #'
 #' `reporting_fraction` is where an estimated reporting level slots in: seeded infections are the reported cases
@@ -38,15 +38,14 @@
 #' @param circulation_threshold Reported cases per million people per year at or above which the disease is taken
 #'   to be circulating. Default 2.
 #' @param reporting_fraction Share of infections that are reported (default 1).
-#' @param seed_floor Minimum number of infections introduced each year under `"circulating_years"` and `"endemic"`
-#'   (default 10).
+#' @param seed_floor Minimum number of infections introduced each year under `"circulating_years"` (default 10).
 #'
 #' @return A list with `R0` and `tt_R0` (days), `seed_data` (long format, by single year of age), `tt_seeded`
 #'   (days), and `summary`, a data frame by year of reported cases, seeded infections and whether transmission was
 #'   on.
 #' @keywords internal
 build_transmission_history <- function(case_reports, population, years, R0, disease,
-                                       transmission_history = c("circulating_years", "reported_cases_only", "endemic"),
+                                       transmission_history = c("circulating_years", "reported_cases_only"),
                                        circulation_threshold = 2, reporting_fraction = 1, seed_floor = 10) {
 
   transmission_history <- match.arg(transmission_history)
@@ -88,7 +87,7 @@ build_transmission_history <- function(case_reports, population, years, R0, dise
 
   } else {
 
-    if (transmission_history == "endemic" || tolower(disease) %in% always_circulating_diseases()) {
+    if (tolower(disease) %in% always_circulating_diseases()) {
       on <- rep(TRUE, n_years)
     } else {
       on <- logical(n_years)

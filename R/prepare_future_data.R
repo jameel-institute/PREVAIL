@@ -8,9 +8,11 @@
 #' @param future_events A `data.frame` specifying future event timepoints and modifications. Must contain:
 #'   \itemize{
 #'     \item \code{time}: Future time (numeric).
-#'     \item \code{relative_coverage}: Multiplicative modifier to vaccination coverage.
+#'     \item \code{relative_coverage}: Multiplicative modifier to vaccination coverage. Applied to coverage, not
+#'       to the daily rate: see [scale_vaccination_rates()].
 #'     \item \code{R0}: Basic reproduction number for each future timepoint.
-#'     \item \code{introduced_cases}: Number of seed infections to introduce at each timepoint.
+#'     \item \code{introduced_cases}: Number of seed infections to introduce at each timepoint (once, on the day
+#'       of the event).
 #'   }
 #' @param current_susceptibility A named list with updated `S0`, `Rpop0` values reflecting the final simulation state.
 #'
@@ -48,7 +50,11 @@ prepare_future_data <- function(params, future_events, current_susceptibility) {
   )
 
   for (i in seq_len(n_future)) {
-    vacc_array[, , , i] <- pmin(vacc_array[, , , i] * future_events$relative_coverage[i], 1)
+    vacc_array[, , , i] <- scale_vaccination_rates(
+      rates = array(final_vacc, dim = dim(prior_vacc)[1:3]),
+      aging_rate = as.numeric(params$aging_rate),
+      relative_coverage = future_events$relative_coverage[i]
+    )
   }
 
   new_params$vaccination_coverage <- vacc_array
@@ -120,7 +126,12 @@ prepare_future_data <- function(params, future_events, current_susceptibility) {
       summarise(value = sum(value), .groups = "drop")
   }))
 
-  new_params$tt_seeded <- unique(sort(c(0, future_events$time[which(future_events$introduced_cases != 0)], future_events$time[which(future_events$introduced_cases != 0)] + 1, future_events$time)))
+  # Introductions are a one-day pulse at the time of their event: the seeds go in the slice that starts at the
+  # event's time and the slice that starts the day after is empty (unless another event introduces cases then).
+  # In 0.1.0 the seeds were indexed by event number rather than by position in tt_seeded, so with introductions in
+  # more than one year they landed in the wrong slice and could be applied every day until the next event.
+  seeding_events <- which(future_events$introduced_cases != 0)
+  new_params$tt_seeded <- unique(sort(c(0, future_events$time[seeding_events], future_events$time[seeding_events] + 1, future_events$time)))
   new_params$no_seeded_changes <- length(new_params$tt_seeded)
 
   new_params$seeded <- generate_array_df(
@@ -129,7 +140,10 @@ prepare_future_data <- function(params, future_events, current_susceptibility) {
     dim3 = params$n_risk,
     dim4 = new_params$no_seeded_changes,
     updates = seed_df %>%
-      mutate(dim4 = match(dim4, sort(unique(dim4))))
+      dplyr::filter(value != 0) %>%
+      mutate(dim4 = match(future_events$time[dim4], new_params$tt_seeded)) %>%
+      group_by(dim1, dim2, dim3, dim4) %>%
+      summarise(value = sum(value), .groups = "drop")
   ) %>% df_to_array()
 
   new_params$repro_weight <- params$repro_weight %>%
@@ -145,4 +159,35 @@ prepare_future_data <- function(params, future_events, current_susceptibility) {
 
   ## --- Return Future Scenario Parameters ---
   return(new_params)
+}
+
+#' Scale Vaccination Rates by a Relative Coverage
+#'
+#' Changes a set of daily vaccination probabilities so that first-dose coverage is multiplied by
+#' `relative_coverage`. The first-dose rate of each age group is converted back to the coverage it gives (the share
+#' vaccinated on leaving the age group), the coverage is scaled, and the result is converted to a rate again (see
+#' [coverage_to_daily_rate()]). Rates of later doses are rates among those who have had the previous dose, so they
+#' are left as they are: coverage of every dose then scales by `relative_coverage`. A relative coverage of zero
+#' stops all vaccination.
+#'
+#' @param rates Daily vaccination probabilities by age group, stratum left and risk group.
+#' @param aging_rate Daily ageing probability by age group.
+#' @param relative_coverage Multiplier on coverage.
+#' @param max_coverage Cap on coverage (default 0.99).
+#'
+#' @return An array like `rates`.
+#' @keywords internal
+scale_vaccination_rates <- function(rates, aging_rate, relative_coverage, max_coverage = 0.99) {
+  if (relative_coverage <= 0) {
+    rates[] <- 0
+    return(rates)
+  }
+  if (relative_coverage == 1) return(rates)
+  a <- rep_len(aging_rate, dim(rates)[1])
+  for (k in seq_len(dim(rates)[3])) {
+    p <- rates[, 1, k]
+    coverage <- ifelse(p > 0, p / (a + p * (1 - a)), 0)
+    rates[, 1, k] <- ifelse(p > 0, coverage_to_daily_rate(pmin(coverage * relative_coverage, max_coverage), a), 0)
+  }
+  rates
 }

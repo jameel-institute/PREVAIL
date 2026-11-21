@@ -40,13 +40,17 @@ parse_schedule_age <- function(x) {
 #' The model moves people out of an age group at a constant rate (`aging_rate` per day), so the time spent in a
 #' group is geometric rather than a fixed number of years. With a daily vaccination probability `p` (applied after
 #' ageing on each day, as in the model) the share of a cohort that has been vaccinated by the time it leaves the
-#' group is `p (1 - a) / (a + p (1 - a))`. This function inverts that relationship, so that the share vaccinated on
-#' leaving the group equals `coverage`:
-#' \deqn{p = \frac{a}{1 - a} \frac{c}{1 - c}}
+#' group is `p / (a + p (1 - a))`. This function inverts that relationship, so that the share vaccinated on leaving
+#' the group equals `coverage`:
+#' \deqn{p = \frac{a c}{1 - c (1 - a)}}
+#' which is close to `a c / (1 - c)`: the ageing rate times the odds of being vaccinated.
 #'
 #' PREVAIL 0.1.0 used `1 - (1 - c)^(1/365)` spread over the years in the age group, which assumes everyone spends
 #' exactly that many years in the group: a reported coverage of 90\% then gave about 70\% in the model and no input
 #' could give more than about 82\%.
+#'
+#' The relationship is exact for a steady flow of people through the age group. Where the number of births is
+#' changing quickly the share vaccinated in the model drifts from the target by up to about a percentage point.
 #'
 #' `coverage_accuracy` multiplies the odds of being vaccinated, to represent true coverage differing from reported
 #' coverage: 1 takes the data at face value, 2 halves the unvaccinated share when coverage is high, 0.5 roughly
@@ -61,8 +65,8 @@ parse_schedule_age <- function(x) {
 #' @return Daily vaccination probability, between 0 and 1.
 #' @keywords internal
 coverage_to_daily_rate <- function(coverage, aging_rate, coverage_accuracy = 1, max_coverage = 0.99) {
-  c_use <- pmin(pmax(coverage, 0), max_coverage)
-  rate <- coverage_accuracy * aging_rate / (1 - aging_rate) * c_use / (1 - c_use)
+  c_use <- adjust_coverage_odds(coverage, coverage_accuracy, max_coverage)
+  rate <- aging_rate * c_use / (1 - c_use * (1 - aging_rate))
   pmin(pmax(rate, 0), 1)
 }
 
@@ -134,7 +138,11 @@ routine_dose_coverage <- function(vaccination_data, n_doses, years, percent = TR
     by_year <- tapply(sub$coverage, sub$year, max)
     yr <- as.numeric(names(by_year))
     val <- as.numeric(by_year) / if (percent) 100 else 1
-    series <- stats::approx(yr, val, xout = years, method = "linear", rule = 2, ties = "ordered")$y
+    series <- if (length(yr) == 1) {
+      rep(val, length(years))
+    } else {
+      stats::approx(yr, val, xout = years, method = "linear", rule = 2, ties = "ordered")$y
+    }
     series[years < min(yr)] <- 0
     out[, d] <- pmin(pmax(series, 0), 1)
     has_data[d] <- TRUE
@@ -303,7 +311,7 @@ resolve_vaccine_waning <- function(vaccine_waning, disease) {
 #'
 #' An SIA is applied in its year at the rate that reaches its coverage within the year, in every stratum that can
 #' still receive a dose. Its coverage by single year of age is averaged over the model age group, weighted by
-#' population.
+#' population, before it is converted to a rate.
 #'
 #' @param routine_coverage Matrix from [routine_dose_coverage()].
 #' @param dose_ages Matrix from [routine_dose_ages()].
@@ -358,10 +366,10 @@ build_vaccination_rates <- function(routine_coverage, dose_ages, sia, years, n_v
       by_age <- rep(0, 101)
       cov_age <- tapply(this$coverage, pmin(this$age, 100), max)
       by_age[as.integer(names(cov_age)) + 1] <- adjust_coverage_odds(as.numeric(cov_age), coverage_accuracy)
-      daily <- 1 - (1 - by_age)^(1 / 365)
       pop <- population[min(y, nrow(population)), ]
       groups <- group_of_age(0:100)
-      daily_group <- tapply(daily * pop, groups, sum) / pmax(tapply(pop, groups, sum), 1e-12)
+      coverage_group <- tapply(by_age * pop, groups, sum) / pmax(tapply(pop, groups, sum), 1e-12)
+      daily_group <- 1 - (1 - pmin(coverage_group, 0.99))^(1 / 365)
       for (g in as.integer(names(daily_group))[daily_group > 0]) {
         rate[g, eligible, y] <- 1 - (1 - rate[g, eligible, y]) * (1 - daily_group[[as.character(g)]])
       }

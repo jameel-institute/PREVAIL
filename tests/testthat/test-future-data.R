@@ -17,11 +17,18 @@ test_that("the model introduces exactly the cases asked for", {
   events <- data.frame(time = c(0, 365, 730), relative_coverage = 1, R0 = 0, introduced_cases = c(10, 0, 10))
   set.seed(1)
   f <- prepare_future_data(p, events, list(S0 = p$S0, Rpop0 = p$Rpop0))
-  sys <- dust2::dust_system_create(PREVAIL:::transmission_model(), f[setdiff(names(f), c("input_data", "history"))], n_particles = 1, seed = 1)
+  pars <- f[setdiff(names(f), c("input_data", "history"))]
+  # seeds are placed on susceptibles with a binomial draw for each age group and stratum, so the number introduced
+  # is exact in expectation (and in a deterministic run) and close to it in any one stochastic run
+  sys <- dust2::dust_system_create(PREVAIL:::transmission_model(), pars, n_particles = 1, deterministic = TRUE)
   dust2::dust_system_set_state_initial(sys)
   index <- dust2::dust_unpack_index(sys)
   new_case <- dust2::dust_system_simulate(sys, 1:(3 * 365), index_state = as.vector(index$new_case))
-  expect_equal(sum(new_case), 20)
+  expect_equal(sum(new_case), 20, tolerance = 1e-3)
+  sys <- dust2::dust_system_create(PREVAIL:::transmission_model(), pars, n_particles = 20, seed = 1)
+  dust2::dust_system_set_state_initial(sys)
+  new_case <- dust2::dust_system_simulate(sys, 1:(3 * 365), index_state = as.vector(index$new_case))
+  expect_equal(sum(new_case) / 20, 20, tolerance = 0.1)
 })
 
 test_that("a single introduction and no introduction still work", {

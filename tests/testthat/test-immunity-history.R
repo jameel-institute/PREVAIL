@@ -15,11 +15,11 @@ test_that("reported cases alone leave far more people susceptible", {
   reported <- cached_history("COD", "measles", 15, transmission_history = "reported_cases_only")
   expect_gt(reported$summary$reff, 3)
   expect_gt(reported$summary$susceptible, 2 * circulating$summary$susceptible)
-  # under complete reporting modelled infections are the reported cases (in earlier decades some seeds are lost
-  # where an age group has fewer unvaccinated susceptible people than the seeds placed in it)
+  # under complete reporting modelled infections are the reported cases (placed with binomial draws, so up to
+  # sampling noise)
   recent <- tail(reported$infections, 10)
   recent <- recent[!is.na(recent$reported_cases), ]
-  expect_true(all(abs(recent$infections - recent$reported_cases) <= 2))
+  expect_true(all(abs(recent$infections - recent$reported_cases) <= 3 * sqrt(recent$reported_cases) + 5))
   # and the circulating-years history implies that only a few percent of infections are reported
   implied <- sum(tail(circulating$infections$reported_cases, 10), na.rm = TRUE) / sum(tail(circulating$infections$infections, 10))
   expect_lt(implied, 0.2)

@@ -15,6 +15,7 @@
 #' @importFrom dplyr group_by summarise mutate left_join rename select across
 #' @importFrom data.table first
 #' @importFrom ggplot2 ggplot aes geom_line theme_minimal labs
+#' @importFrom rlang sym .data
 #' @keywords internal
 aggregate_age_structure <- function(obj,
                                     age_breaks,

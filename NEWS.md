@@ -88,7 +88,8 @@ PREVAIL produces can be used directly, and fixes several problems in the model e
 * Seeded infections go into E (so they take the severe/non-severe split) rather than straight into I, and are placed
   across ages and vaccination strata in proportion to effective susceptibles on the day, rather than in the
   unvaccinated stratum of each age group in proportion to population and capped at who was there. Under
-  `"reported_cases_only"` up to 30% of reported cases in the 1980s could not be placed before. `new_case` counts
+  `"reported_cases_only"` many reported cases could not be placed before (355,000 of the United Kingdom's in the
+  1980s). `new_case` counts
   seeded infections when they become infectious, like any other infection. The placement is a binomial draw for
   each age group and stratum (odin has no multinomial), so the number seeded is exact on average and in a
   deterministic run, and within sampling noise in any one stochastic run.

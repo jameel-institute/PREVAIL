@@ -47,3 +47,10 @@ test_that("the model no longer has a Reff output", {
   sys <- dust2::dust_system_create(PREVAIL:::transmission_model(), cached_params("PSE", "measles", 15), n_particles = 1)
   expect_false("Reff" %in% names(dust2::dust_unpack_index(sys)))
 })
+
+test_that("maternal protection reduces the reproduction number through infants' susceptibility", {
+  C <- PREVAIL:::project_to_symmetric_doubly_stochastic(matrix(c(4, 1, 1, 1, 3, 1, 1, 1, 2), 3, 3))
+  N <- c(100, 200, 300)
+  expect_equal(effective_reproduction_number(cbind(N), N, 0, C, 10, maternal = 0.5), 5)
+  expect_lt(effective_reproduction_number(cbind(N), N, 0, C, 10, maternal = c(0.5, 0, 0)), 10)
+})

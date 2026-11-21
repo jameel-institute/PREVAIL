@@ -10,6 +10,7 @@
 #' `j`. Collapsing over strata, the reproduction number is the dominant eigenvalue of
 #' \deqn{M_{ij} = R_0 C_{ij} e_j, \quad e_j = \sum_v S_{jv} (1 - m_v)^2 / N_j.}
 #' (Up to 0.2.0 the model divided by `N_i` instead, which gives a similar matrix with the same eigenvalue.)
+#' Maternal antibodies reduce the susceptibility of the youngest age groups by `maternal`, which multiplies `e_j`.
 #'
 #' The model itself does not output a reproduction number. Up to 0.2.0 it had a `Reff` output, the unweighted mean
 #' over age groups of the row sums of a related matrix, which is not a reproduction number (it read about 0.5 where
@@ -22,6 +23,8 @@
 #'   `age_vaccination_beta_modifier`), with the same dimensions as `S`, or a vector with one value per stratum.
 #' @param contact_matrix The model's contact matrix.
 #' @param R0 Basic reproduction number.
+#' @param maternal Reduction in susceptibility from maternal antibodies by age group (a single number or one value
+#'   per age group; see [maternal_protection()]). Default 0.
 #'
 #' @return The effective reproduction number (a single number).
 #'
@@ -31,7 +34,7 @@
 #' effective_reproduction_number(S = matrix(100, 3, 1), N = rep(100, 3), protection = 0,
 #'                               contact_matrix = C, R0 = 15)
 #' @export
-effective_reproduction_number <- function(S, N, protection, contact_matrix, R0) {
+effective_reproduction_number <- function(S, N, protection, contact_matrix, R0, maternal = 0) {
   S <- collapse_risk(S)
   n_age <- nrow(S)
   n_vacc <- ncol(S)
@@ -48,10 +51,36 @@ effective_reproduction_number <- function(S, N, protection, contact_matrix, R0) 
     stop("N and contact_matrix must match the number of age groups in S")
   }
 
-  e <- ifelse(N > 0, rowSums(S * (1 - protection)^2) / N, 0)
+  e <- ifelse(N > 0, rowSums(S * (1 - protection)^2) / N, 0) * (1 - rep_len(maternal, n_age))
   M <- R0 * sweep(contact_matrix, 2, e, "*")
   if (all(M == 0)) return(0)
   max(Re(eigen(M, only.values = TRUE)$values))
+}
+
+#' Maternal Protection of Infants in a Model State
+#'
+#' The reduction in susceptibility the model applies to age groups up to `age_maternal_protection_ends`:
+#' `protection_weight_vacc` times the share of women of reproductive age who are vaccinated and never infected, plus
+#' `protection_weight_rec` times the share ever infected (capped at 1).
+#'
+#' @param state A list of arrays `S`, `E`, `I`, `R`, `Is` and `Rc` (age by stratum by risk group).
+#' @param params The parameter list the state was produced with.
+#'
+#' @return Reduction in susceptibility by age group.
+#' @keywords internal
+maternal_protection <- function(state, params) {
+  n_age <- params$n_age
+  rw <- matrix(params$repro_weight, nrow = n_age)
+  rw <- rw[, ncol(rw)]
+  mums <- seq_len(n_age) >= params$repro_low & seq_len(n_age) <= params$repro_high
+  by_age <- function(x, strata = TRUE) sum((rowSums(collapse_risk(x)[, strata, drop = FALSE]) * rw)[mums])
+  n_vacc <- dim(state$S)[2]
+  vaccinated <- if (n_vacc > 1) by_age(state$S, -1) + by_age(state$E, -1) else 0
+  natural <- by_age(state$I) + by_age(state$R) + by_age(state$Is) + by_age(state$Rc)
+  all <- by_age(state$S) + by_age(state$E) + natural
+  if (all <= 0) return(rep(0, n_age))
+  m <- min(max(params$protection_weight_vacc * vaccinated / all + params$protection_weight_rec * natural / all, 0), 1)
+  ifelse(seq_len(n_age) <= params$age_maternal_protection_ends, m, 0)
 }
 
 #' Sum (or Average) an Array over its Risk Dimension
@@ -133,7 +162,7 @@ summarise_immunity <- function(state, params, R0) {
   )
 
   list(
-    reff = effective_reproduction_number(S, N, protection, params$contact_matrix, R0),
+    reff = effective_reproduction_number(S, N, protection, params$contact_matrix, R0, maternal_protection(state, params)),
     population = sum(N),
     susceptible = sum(susceptible_unvaccinated + susceptible_vaccinated) / sum(N),
     vaccinated = sum(total[, vaccinated_strata, drop = FALSE]) / sum(N),

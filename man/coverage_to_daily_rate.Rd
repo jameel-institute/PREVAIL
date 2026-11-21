@@ -41,6 +41,12 @@ could give more than about 82\%.
 The relationship is exact for a steady flow of people through the age group. Where the number of births is
 changing quickly the share vaccinated in the model drifts from the target by up to about a percentage point.
 
+The rate applies across the whole age group, from its first day. With the default five-year age groups a dose
+scheduled at 9 months is given at a constant rate from birth to age 5, so the model's infants are as likely to be
+vaccinated as its four year olds: too many vaccinated infants and too few vaccinated four year olds, with the
+right coverage on leaving the group. The age structure cannot do better than this; for questions about infants
+use finer age groups (for example `new_age_breaks = c(0, 1, 2, 5, 10, ...)`).
+
 `coverage_accuracy` multiplies the odds of being vaccinated, to represent true coverage differing from reported
 coverage: 1 takes the data at face value, 2 halves the unvaccinated share when coverage is high, 0.5 roughly
 doubles it.

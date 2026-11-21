@@ -184,6 +184,7 @@ Rc_after_aging[, , ]               <- max(Rc[i, j, k] + aging_into_Rc[i, j, k] -
 # STEP 2: VACCINATION — Apply vaccination after aging
 # ------------------------------------------------------------------------------
 #Apply stochastic or deterministic vaccination transitions between vaccination strata for each compartment.
+#Vaccination happens at a constant daily rate across the whole age group (see coverage_to_daily_rate()), so with five-year age groups an infant dose is given from birth to age 5.
 
 # Susceptible (S)
 #Here we ensure that those being vaccinated out of the compartment have individuals in it (S_after_aging[i, j, k] <= 0), the probability is more than 0 (vaccination_prop[i, j, k] <= 0), and that vaccination can occur in the specified compartment (i.e we dont vaccine someone already in the highest vaccination compartment as they are already max vaccinated)

@@ -52,10 +52,13 @@ PREVAIL produces can be used directly, and fixes several problems in the model e
 * All three DTP doses use the primary-series row of the vaccine table (diphtheria `dose` 1, pertussis `dose` 3).
   The second row (diphtheria 6, pertussis 5) is protection after the full schedule with boosters, which the model
   does not represent. Doses 1 and 2 therefore get primary-series protection, which overstates it; partial-course
-  values belong in the table as their own rows.
+  values belong in the table as their own rows. Boosters are not modelled: they need their own strata (with the
+  booster row's values) rather than a different mapping.
 * Seeded cases are placed by age in proportion to the population without random sampling, so the same inputs give
   the same parameters.
 * Windows binaries removed from `src/`.
+* Documented that routine doses are given at a constant rate across the whole age group they fall in, so with
+  five-year age groups an infant dose is given from birth to age 5 (`?coverage_to_daily_rate`).
 * The pkgdown site and repository links point at jameel-institute (`https://jameel-institute.github.io/PREVAIL/`).
 
 ## Model equations

@@ -9,7 +9,8 @@ process_vaccination_routine(
   iso,
   vaccine = "All",
   year_start = "",
-  year_end = ""
+  year_end = "",
+  coverage_source = c("wuenic", "median")
 )
 }
 \arguments{
@@ -23,9 +24,15 @@ process_vaccination_routine(
 \item{year_start}{First year to include (default: earliest year in data).}
 
 \item{year_end}{Final year to include (default: latest year in data).}
+
+\item{coverage_source}{`"wuenic"` (default) uses the WHO/UNICEF estimate of national immunisation coverage for a
+vaccine and year where there is one, and the median of the administrative and official figures otherwise.
+`"median"` takes the median of all three, as 0.1.0 did (which in practice follows the administrative figure
+whenever the administrative and official figures agree).}
 }
 \value{
-A `data.table` with columns `year`, `vaccine`, `vaccine_description`, `dose_order`, and median `coverage`.
+A `data.table` with columns `year`, `vaccine`, `vaccine_description`, `dose_order`, and median `coverage`
+  (and `age` where the input has one).
 }
 \description{
 Filters and processes routine immunization data for a specified country, time range, and optionally vaccine type.

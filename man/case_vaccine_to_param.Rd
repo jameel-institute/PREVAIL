@@ -13,9 +13,18 @@ case_vaccine_to_param(
   vaccination_pre1980,
   vaccine_parameters,
   disease_parameters,
-  WHO_seed_switch,
+  WHO_seed_switch = TRUE,
   custom_routine_vaccination = NA,
-  custom_sia_vaccination = NA
+  custom_sia_vaccination = NA,
+  disease = NULL,
+  R0 = 1,
+  processed_case_reports = processed_case,
+  transmission_history = "circulating_years",
+  circulation_threshold = 2,
+  reporting_fraction = 1,
+  seed_floor = 10,
+  coverage_accuracy = 1,
+  vaccine_waning = "default"
 )
 }
 \arguments{
@@ -25,7 +34,7 @@ case_vaccine_to_param(
 
 \item{processed_vaccination_sia}{Data frame of SIA coverage.}
 
-\item{processed_case}{WHO case reports processed for the country of interest.}
+\item{processed_case}{WHO case reports processed for the country of interest (years with cases).}
 
 \item{vaccination_schedule}{Full WHO vaccine schedule data frame.}
 
@@ -33,12 +42,30 @@ case_vaccine_to_param(
 
 \item{vaccine_parameters}{Data frame of vaccination parameters.}
 
+\item{disease_parameters}{Data frame of disease parameters.}
+
+\item{WHO_seed_switch}{Retained for compatibility. `FALSE` is the same as `transmission_history = "endemic"`.}
+
 \item{custom_routine_vaccination}{Data frame or NA indicating custom routine vaccination.}
 
 \item{custom_sia_vaccination}{Data frame or NA indicating custom sia vaccination.}
+
+\item{disease}{Disease name. If `NULL` it is taken from the case data.}
+
+\item{R0}{Basic reproduction number while transmission is on.}
+
+\item{processed_case_reports}{WHO case reports including years with zero cases. Defaults to `processed_case`.}
+
+\item{transmission_history, circulation_threshold, reporting_fraction, seed_floor}{Passed to
+[build_transmission_history()].}
+
+\item{coverage_accuracy}{Multiplier on the odds of vaccination (see [coverage_to_daily_rate()]).}
+
+\item{vaccine_waning}{Passed to [resolve_vaccine_waning()].}
 }
 \value{
-A named list of parameters including coverage arrays and seeding inputs.
+A named list of parameters including the routine coverage and dose ages, SIA coverage, protection and
+  waning by stratum, the time-varying R0 and the seeding inputs.
 }
 \description{
 Wrapper function that prepares all time-varying parameters for use in an age-, vaccine-,

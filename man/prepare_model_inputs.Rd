@@ -20,7 +20,8 @@ prepare_model_inputs(
   year_start = "",
   year_end = "",
   n_age = 1,
-  n_risk = 1
+  n_risk = 1,
+  coverage_source = "wuenic"
 )
 }
 \arguments{
@@ -55,12 +56,15 @@ prepare_model_inputs(
 \item{n_age}{Number of age groups in the model.}
 
 \item{n_risk}{Number of risk groups in the model.}
+
+\item{coverage_source}{Passed to [process_vaccination_routine()].}
 }
 \value{
 A named list containing:
 \describe{
   \item{processed_demographic_data}{Output from `process_demography()`.}
-  \item{processed_case_data}{Filtered disease case data.}
+  \item{processed_case_data}{Filtered disease case data (years with at least one reported case).}
+  \item{processed_case_reports}{As `processed_case_data` but keeping years with zero reported cases.}
   \item{processed_vaccination_data}{Cleaned and summarized routine vaccination data.}
   \item{processed_vaccination_sia}{Filtered SIA data for the specified vaccine.}
   \item{demographic_plots}{(Placeholder) Plot object to visualize processed inputs.}

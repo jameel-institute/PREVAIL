@@ -9,7 +9,8 @@ process_prior_cases(
   iso,
   disease = "All",
   year_start = "",
-  year_end = ""
+  year_end = "",
+  keep_zero = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,9 @@ process_prior_cases(
 \item{year_start}{First year to include (default: first year in data).}
 
 \item{year_end}{Final year to include (default: last year in data).}
+
+\item{keep_zero}{Logical; keep years with zero reported cases? The default (`FALSE`) returns years with at least
+one case, as in 0.1.0. Zero reports are needed to tell "no cases reported" apart from "no report".}
 }
 \value{
 A filtered `data.table` containing only records for the specified country, time range, and disease.

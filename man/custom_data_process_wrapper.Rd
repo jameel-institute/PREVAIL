@@ -8,13 +8,20 @@ custom_data_process_wrapper(
   iso,
   disease,
   R0,
-  cfr_off = T,
+  cfr_off = TRUE,
   year_start = "",
   year_end = "",
   WHO_seed_switch = TRUE,
   aggregate_age = TRUE,
   new_age_breaks = c(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80,
     Inf),
+  transmission_history = c("circulating_years", "reported_cases_only", "endemic"),
+  circulation_threshold = 2,
+  reporting_fraction = 1,
+  coverage_accuracy = 1,
+  vaccine_waning = "default",
+  coverage_source = c("wuenic", "median"),
+  seed_floor = 10,
   custom_migration = NA,
   custom_fertility = NA,
   custom_mortality = NA,
@@ -33,7 +40,7 @@ custom_data_process_wrapper(
 
 \item{disease}{A character string specifying the disease of interest (e.g., "measles", "diphtheria", "pertussis").}
 
-\item{R0}{Numeric scalar or vector specifying the basic reproduction number, defining disease transmissibility.}
+\item{R0}{The basic reproduction number while transmission is on (a single number).}
 
 \item{cfr_off}{Logical; Sets the CFR to zero. Used when calculating current susceptibility as prior mortality rates will already include disease specific mortality.}
 
@@ -41,11 +48,33 @@ custom_data_process_wrapper(
 
 \item{year_end}{Optional numeric value specifying the last year of the simulation window. Default ("") uses the latest available data year.}
 
-\item{WHO_seed_switch}{Logical; use WHO-style seeding to replicate historical case-reporting patterns (default TRUE).}
+\item{WHO_seed_switch}{Retained for compatibility. `FALSE` is the same as `transmission_history = "endemic"`.}
 
 \item{aggregate_age}{Logical; aggregate data from single-year age groups into custom intervals (default TRUE).}
 
 \item{new_age_breaks}{Numeric vector; breakpoints for age group aggregation. Default is c(0, 5, ..., Inf).}
+
+\item{transmission_history}{The assumption about how reported cases relate to true infections over the
+historical period: `"circulating_years"` (default), `"reported_cases_only"` (the assumption 0.1.0 made: case
+reporting is complete) or `"endemic"`. See the section below.}
+
+\item{circulation_threshold}{Under `"circulating_years"`, the reported cases per million people per year at or
+above which the disease is taken to be circulating. Default 2.}
+
+\item{reporting_fraction}{Share of infections that are reported, used to scale the seeded infections (reported
+cases divided by this). A single number, or a vector named by year. Default 1.}
+
+\item{coverage_accuracy}{Multiplier on the odds of being vaccinated, to represent true coverage differing from
+reported coverage. 1 (default) takes reported coverage at face value; 2 halves the unvaccinated share when
+coverage is high; 0.5 roughly doubles it.}
+
+\item{vaccine_waning}{`"default"` (no waning of measles vaccine protection; the vaccine parameter table for other
+diseases), `"table"` (the table for every disease, as in 0.1.0) or `"none"`. See [resolve_vaccine_waning()].}
+
+\item{coverage_source}{`"wuenic"` (default) or `"median"`; see [process_vaccination_routine()].}
+
+\item{seed_floor}{Minimum number of infections introduced each year under `"circulating_years"` and `"endemic"`.
+Default 10.}
 
 \item{custom_migration}{Optional. Data frame to override default migration data.}
 
@@ -89,4 +118,37 @@ and replace the matching internal dataset for this model run.
 
 If any \code{custom_*} argument is provided, it replaces the corresponding PREVAIL internal dataset for that run.
 Demographic custom data is reformatted with \code{\link{reformat_demographic_data}} before use.
+
+Demographic data (UN WPP) end before the present day; the last year with data is carried forward to `year_end`.
+Routine coverage is likewise carried forward from its last year with data.
+
+The returned list also carries `history`, which is not used by the model: the reporting assumption, reported
+cases, seeded infections and transmission status by year, routine coverage and scheduled age by dose and year,
+and the protection and waning assigned to each vaccination stratum.
 }
+\section{Reporting assumptions}{
+
+WHO case reports badly under-count infections in most settings, but how badly is not known. Until reporting
+fractions are estimated (for example from seroprevalence surveys) the history has to be run under an assumption,
+chosen with `transmission_history`:
+
+\describe{
+  \item{`"circulating_years"`}{Reported cases are taken as evidence of whether the disease was circulating, not of
+  how many infections there were. Transmission is on (at `R0`) in every year with at least
+  `circulation_threshold` reported cases per million people, and in every year before reporting starts; it is off
+  in years with fewer. A year with no report keeps the status of the year before. Pertussis is treated as
+  circulating in every year, because it circulates everywhere whether or not it is reported. Reported cases
+  (divided by `reporting_fraction`), and never fewer than `seed_floor` infections, are introduced on the first day
+  of each year so that infection can return after fade-out. The number of infections is whatever the model implies.}
+  \item{`"reported_cases_only"`}{Case reporting and reported vaccination are taken as complete. Transmission runs
+  at `R0` until the first year with a reported case and is switched off from then on; after that the only
+  infections are the reported cases (divided by `reporting_fraction`), introduced on the first day of each year.
+  This is the assumption PREVAIL 0.1.0 made, with `reporting_fraction = 1`.}
+  \item{`"endemic"`}{Transmission is on at `R0` throughout, with the same seeding as `"circulating_years"`.}
+}
+
+`reporting_fraction` is where an estimated reporting level slots in: seeded infections are the reported cases
+divided by it. It can be a single number or a vector named by year (years without a name take the value of the
+nearest named year).
+}
+

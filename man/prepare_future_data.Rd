@@ -12,9 +12,11 @@ prepare_future_data(params, future_events, current_susceptibility)
 \item{future_events}{A `data.frame` specifying future event timepoints and modifications. Must contain:
 \itemize{
   \item \code{time}: Future time (numeric).
-  \item \code{relative_coverage}: Multiplicative modifier to vaccination coverage.
+  \item \code{relative_coverage}: Multiplicative modifier to vaccination coverage. Applied to coverage, not
+    to the daily rate: see [scale_vaccination_rates()].
   \item \code{R0}: Basic reproduction number for each future timepoint.
-  \item \code{introduced_cases}: Number of seed infections to introduce at each timepoint.
+  \item \code{introduced_cases}: Number of seed infections to introduce at each timepoint (once, on the day
+    of the event).
 }}
 
 \item{current_susceptibility}{A named list with updated `S0`, `Rpop0` values reflecting the final simulation state.}

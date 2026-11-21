@@ -14,10 +14,16 @@ filter_vaccine_schedule(vaccination_schedule, vaccination_type, iso)
 \item{iso}{A 3-letter ISO country code.}
 }
 \value{
-A filtered and arranged `data.frame` with an added `age_years` column.
+A filtered and arranged `data.frame` with an added `age_years` column. Rows whose age cannot be read are
+  dropped.
 }
 \description{
 Filters a WHO vaccination schedule data frame to extract age-specific routine vaccination
 rounds for a specific vaccine and country.
+}
+\details{
+The age of each dose is converted to years row by row (see [parse_schedule_age()]). In 0.1.0 the conversion was
+not row-wise: every dose was given the median over the whole column, read in its own unit, so for example the
+United Kingdom's first measles dose ("Y1") was placed in adulthood.
 }
 \keyword{internal}

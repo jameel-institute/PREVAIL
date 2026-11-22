@@ -1,3 +1,11 @@
+# PREVAIL (development version)
+
+* New `modelled_seroprevalence()`: the share of a serosurvey age band expected to test seropositive, from the
+  immunity by age of `run_immunity_history()`, allowing for assay sensitivity and specificity, vaccine-protected
+  people without detectable antibody and maternal antibody in infants.
+* New `serosurvey_loglik()`: binomial or beta-binomial log-likelihood of seropositive counts by age band. Together
+  these are what fitting `reporting_fraction` and `coverage_accuracy` to serosurveys needs.
+
 # PREVAIL 0.2.0
 
 This version rebuilds how the historical inputs (1950 to the present day) are made, so that the starting immunity

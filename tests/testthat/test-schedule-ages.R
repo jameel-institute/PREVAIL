@@ -40,9 +40,11 @@ test_that("the first measles dose is given to under fives in the model", {
   }
 })
 
-test_that("DTP doses are scheduled in infancy", {
+test_that("DTP primary doses are scheduled in infancy and boosters later", {
   for (iso in c("GBR", "SDN", "PSE")) {
     p <- cached_params(iso, "diphtheria", 3)
-    expect_true(all(p$history$dose_ages[nrow(p$history$dose_ages), ] < 1), info = iso)
+    ages <- p$history$dose_ages[nrow(p$history$dose_ages), ]
+    expect_true(all(ages[1:3] < 1), info = iso)
+    expect_true(all(ages[-(1:3)] >= 1), info = iso)
   }
 })

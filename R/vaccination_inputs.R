@@ -225,23 +225,25 @@ routine_dose_ages <- function(schedule, n_doses, years) {
 #' sum of two rows (a protection of 1.75), and a single waning rate (the slowest in the table) was used for every
 #' stratum.
 #'
-#' The table has two rows of doses per disease (measles 1 and 2; diphtheria 1 and 6; pertussis 3 and 5) while the
-#' model has two measles doses and three DTP doses. Each modelled dose uses its own row if there is one and the
-#' first row otherwise. For measles that is simply dose 1 and dose 2. For DTP the `dose` tag is the number of doses
-#' received when the estimate applies: the first row (diphtheria 1, pertussis 3) is the three-dose primary series and
-#' the second (diphtheria 6, pertussis 5) the full schedule including boosters, which the model does not represent.
-#' So all three DTP doses get the primary-series row. That overstates protection after one or two doses; values for
-#' partial courses belong in the table as their own rows (with `dose` 1 and 2), not in code.
+#' The table has two rows of doses per disease (measles 1 and 2; diphtheria 1 and 6; pertussis 3 and 5). For
+#' measles each modelled dose uses its own row. For DTP the `dose` tag is the number of doses received when the
+#' estimate applies: the first row (diphtheria 1, pertussis 3) is the three-dose primary series and the second
+#' (diphtheria 6, pertussis 5) the full schedule including boosters. So the three primary doses (`n_primary`) get the
+#' first row and every booster (doses 4 to 6, see [dtp_booster_schedule()]) the second. That overstates protection
+#' after one or two primary doses, and after a first booster; values for partial courses belong in the table as their
+#' own rows, not in code.
 #'
 #' @param vaccine_parameters Vaccine parameter table for one disease, with columns `parameter`, `value`, `dose`.
 #' @param n_vacc Number of vaccination strata in the model.
 #' @param vaccine_waning Logical; if `FALSE` vaccine protection does not wane (both waning rates are zero and
 #'   everyone stays in the short-term stratum of their last dose).
+#' @param n_primary Number of doses in the primary series (3 for DTP), which take the table's first row while later
+#'   doses take its last. `NULL` (measles): each dose takes its own row, or the first row if it has none.
 #'
 #' @return A list with `protection`, `short_term_waning` and `long_term_waning` (vectors of length `n_vacc`; waning
 #'   as daily probabilities) and `table`, a data frame describing each dose.
 #' @keywords internal
-vaccine_strata_parameters <- function(vaccine_parameters, n_vacc, vaccine_waning = TRUE) {
+vaccine_strata_parameters <- function(vaccine_parameters, n_vacc, vaccine_waning = TRUE, n_primary = NULL) {
 
   n_doses <- (n_vacc - 1) / 2
   protection <- short_w <- long_w <- rep(0, n_vacc)
@@ -258,7 +260,9 @@ vaccine_strata_parameters <- function(vaccine_parameters, n_vacc, vaccine_waning
   }
 
   rows <- lapply(seq_len(n_doses), function(d) {
-    table_dose <- if (d %in% table_doses) d else min(table_doses)
+    table_dose <- if (!is.null(n_primary)) {
+      if (d <= n_primary) min(table_doses) else max(table_doses)
+    } else if (d %in% table_doses) d else min(table_doses)
     data.frame(
       dose = d,
       table_dose = table_dose,
@@ -394,4 +398,137 @@ build_vaccination_rates <- function(routine_coverage, dose_ages, sia, years, n_v
     year = years[idx[, 3]],
     value = rate[idx]
   )
+}
+
+#' DTP Booster Doses from the WHO Schedule
+#'
+#' Finds the booster doses of diphtheria- or pertussis-containing vaccine in a country's routine schedule, so that the
+#' model can give them as doses 4, 5 and 6 after the three-dose primary series.
+#'
+#' The schedule is the latest one in the data for the country. Every diphtheria-containing product counts (infant
+#' combinations, DT, the school-age Td and Tdap boosters), except doses for adults, pregnant women, travellers or
+#' catch-up. The first three distinct ages are the primary series, and each later distinct age before 18 years is a
+#' booster, up to three. A booster protects against pertussis only if a product given at that age contains pertussis
+#' antigen (DTwP, DTaP, Tdap): a school-age Td booster boosts diphtheria but not pertussis.
+#'
+#' WHO reports booster coverage as the 4th, 5th and 6th diphtheria-containing dose, so the `coverage_dose` of each
+#' booster is its rank among the diphtheria boosters (4, 5 or 6), whichever disease is modelled. A booster whose WHO
+#' dose has no coverage data for the country is left out (the United States, for example, reports only the 4th), as
+#' it would otherwise add strata that nobody enters.
+#'
+#' @param vaccination_schedule WHO schedule data (all countries or one).
+#' @param iso Country code.
+#' @param disease `"diphtheria"` or `"pertussis"`.
+#' @param routine_vaccination WHO routine coverage data, used to drop boosters without coverage. `NULL` keeps all.
+#'
+#' @return A data frame with one row per modelled booster: `dose` (4, 5, 6), `age` (years), `pertussis` (logical),
+#'   `coverage_dose` and `vaccine_codes`. Zero rows if the schedule has no boosters.
+#' @keywords internal
+dtp_booster_schedule <- function(vaccination_schedule, iso, disease, routine_vaccination = NULL) {
+  none <- data.frame(dose = integer(0), age = numeric(0), pertussis = logical(0), coverage_dose = integer(0),
+                     vaccine_codes = character(0))
+  s <- as.data.frame(vaccination_schedule)
+  if (!all(c("iso3", "year", "vaccine_code", "age_administered") %in% names(s))) return(none)
+  s <- s[s$iso3 == iso & !is.na(s$age_administered) & grepl("^(DT|TD|DIP)", s$vaccine_code), , drop = FALSE]
+  s <- s[!grepl("ADULT|CATCHUP|PREG|TRAVEL", paste(s$target_pop, s$target_pop_description), ignore.case = TRUE) &
+           !grepl("contact", s$age_administered), , drop = FALSE]
+  if (nrow(s) == 0) return(none)
+  s <- s[s$year == max(s$year), , drop = FALSE]
+  s$age_years <- parse_schedule_age(s$age_administered)
+  s <- resolve_relative_schedule_ages(s)
+  s <- s[!is.na(s$age_years) & s$age_years < 18, , drop = FALSE]
+  ages <- sort(unique(round(s$age_years, 3)))
+  if (length(ages) <= 3) return(none)
+
+  boosters <- utils::head(ages[-(1:3)], 3)
+  out <- data.frame(
+    age = boosters,
+    pertussis = vapply(boosters, function(a) any(grepl("AP|WP", s$vaccine_code[round(s$age_years, 3) == a])), logical(1)),
+    coverage_dose = 3L + seq_along(boosters),
+    vaccine_codes = vapply(boosters, function(a) paste(unique(s$vaccine_code[round(s$age_years, 3) == a]), collapse = ";"),
+                           character(1))
+  )
+  if (identical(tolower(disease), "pertussis")) out <- out[out$pertussis, , drop = FALSE]
+  rv <- as.data.frame(routine_vaccination)
+  if (nrow(rv) && all(c("iso3", "vaccine", "coverage") %in% names(rv))) {
+    reported <- unique(rv$vaccine[rv$iso3 == iso & !is.na(rv$coverage) & rv$coverage > 0])
+    out <- out[paste0("DIPHCV", out$coverage_dose) %in% reported, , drop = FALSE]
+  }
+  if (nrow(out) == 0) return(none)
+  out$dose <- 3L + seq_len(nrow(out))
+  out[, c("dose", "age", "pertussis", "coverage_dose", "vaccine_codes")]
+}
+
+#' Coverage of DTP Booster Doses
+#'
+#' WHO booster coverage (the 4th to 6th diphtheria-containing doses) only starts in 2018. Before the first year with
+#' data, each booster's coverage is taken as the same share of DTP3 coverage as in its first years with data (the
+#' mean over up to three years), from `booster_since` on, and zero before that. This keeps a booster that was already
+#' routine in 2018 for the earlier cohorts that serosurveys sample. Where a booster was introduced recently, set
+#' `booster_since` to its introduction year, or give coverage directly with `custom_routine_vaccination`.
+#'
+#' @param routine_coverage Matrix from [routine_dose_coverage()] (proportions; doses 1 to 3 then the boosters).
+#' @param years Model years.
+#' @param booster_since First year in which boosters can be given before their coverage data start.
+#'
+#' @return `routine_coverage` with booster coverage filled in before its data, and no dose above the one before it.
+#' @keywords internal
+backfill_booster_coverage <- function(routine_coverage, years, booster_since = 1980) {
+  last <- attr(routine_coverage, "last_data_year")
+  n_doses <- ncol(routine_coverage)
+  if (n_doses <= 3) return(routine_coverage)
+  for (d in 4:n_doses) {
+    with_data <- which(routine_coverage[, d] > 0 & routine_coverage[, 3] > 0)
+    if (!length(with_data)) next
+    first <- with_data[seq_len(min(3, length(with_data)))]
+    share <- mean(routine_coverage[first, d] / routine_coverage[first, 3])
+    before <- seq_len(min(with_data) - 1)
+    before <- before[years[before] >= booster_since]
+    routine_coverage[before, d] <- pmin(share * routine_coverage[before, 3], routine_coverage[before, d - 1])
+  }
+  for (d in 2:n_doses) routine_coverage[, d] <- pmin(routine_coverage[, d], routine_coverage[, d - 1])
+  attr(routine_coverage, "last_data_year") <- last
+  routine_coverage
+}
+
+#' Whole-Cell or Acellular Pertussis Vaccine
+#'
+#' Reads the type of pertussis vaccine used for the primary series from a country's latest WHO schedule: whole-cell
+#' if any infant DTP product given in the first year of life is whole-cell (DTwP), acellular otherwise. The schedule
+#' data are one recent snapshot, so the type found is applied to every year; many high-income countries used
+#' whole-cell vaccine before moving to acellular in the 1990s and 2000s.
+#'
+#' @param vaccination_schedule WHO schedule data.
+#' @param iso Country code.
+#' @return `"whole_cell"` or `"acellular"`.
+#' @keywords internal
+pertussis_vaccine_type <- function(vaccination_schedule, iso) {
+  s <- as.data.frame(vaccination_schedule)
+  if (!all(c("iso3", "year", "vaccine_code", "age_administered") %in% names(s))) return("acellular")
+  s <- s[s$iso3 == iso & grepl("^DT", s$vaccine_code), , drop = FALSE]
+  if (nrow(s)) s <- s[s$year == max(s$year), , drop = FALSE]
+  infant <- s[!is.na(parse_schedule_age(s$age_administered)) & parse_schedule_age(s$age_administered) < 1, , drop = FALSE]
+  if (any(grepl("WP", infant$vaccine_code))) "whole_cell" else "acellular"
+}
+
+#' Use the Whole-Cell or Acellular Pertussis Rows of the Vaccine Table
+#'
+#' The vaccine parameter table's pertussis rows tagged `DTP` come from studies of acellular vaccine (Witt et al. 2012,
+#' Klein et al. 2012). Rows tagged `DTwP` replace the primary-series rows for whole-cell vaccine. Booster rows are
+#' shared. Rows for other vaccines (including custom rows) are left as they are.
+#'
+#' @param vaccine_parameters Vaccine parameter table for pertussis.
+#' @param type `"acellular"` or `"whole_cell"`.
+#' @return The table with one set of primary-series rows.
+#' @keywords internal
+select_pertussis_vaccine <- function(vaccine_parameters, type = c("acellular", "whole_cell")) {
+  type <- match.arg(type)
+  vp <- as.data.frame(vaccine_parameters)
+  wp <- vp$vaccine == "DTwP"
+  if (type == "whole_cell" && any(wp)) {
+    vp <- vp[!(vp$vaccine == "DTP" & vp$dose %in% vp$dose[wp]), , drop = FALSE]
+  } else {
+    vp <- vp[!wp, , drop = FALSE]
+  }
+  vp
 }

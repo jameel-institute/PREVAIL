@@ -239,6 +239,7 @@ Rc_after_vaccination[, , ] <- Rc_after_aging[i, j, k] + vaccinating_into_Rc[i, j
 
 # Susceptible (S)
 #The 1st compartment represents unvaccinated, and so people are not vaccinated into that. After this there are two vaccination compartments per dose, a short (odd number) and long (even number) term protection compartment
+#Doses form one chain, so n_vacc = 2 x (number of doses) + 1. Measles has 2 doses (n_vacc = 5). Diphtheria and pertussis have the 3-dose primary series and then any booster doses in the country's schedule as doses 4 to 6 (n_vacc = 7 to 13): a booster is given to people in either stratum of the dose before it, like any later dose. Which doses there are, their protection and their waning are set in R (dtp_booster_schedule(), vaccine_strata_parameters()), not here
 #The first two cannot be vaccinated into
 vaccinating_into_S[, 1:2, ]     <- 0
 #The 3rd compartment can only be increased by unvaccinated individuals

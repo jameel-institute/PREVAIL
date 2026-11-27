@@ -4,7 +4,12 @@
 \alias{vaccine_strata_parameters}
 \title{Vaccine Protection and Waning by Vaccination Stratum}
 \usage{
-vaccine_strata_parameters(vaccine_parameters, n_vacc, vaccine_waning = TRUE)
+vaccine_strata_parameters(
+  vaccine_parameters,
+  n_vacc,
+  vaccine_waning = TRUE,
+  n_primary = NULL
+)
 }
 \arguments{
 \item{vaccine_parameters}{Vaccine parameter table for one disease, with columns `parameter`, `value`, `dose`.}
@@ -13,6 +18,9 @@ vaccine_strata_parameters(vaccine_parameters, n_vacc, vaccine_waning = TRUE)
 
 \item{vaccine_waning}{Logical; if `FALSE` vaccine protection does not wane (both waning rates are zero and
 everyone stays in the short-term stratum of their last dose).}
+
+\item{n_primary}{Number of doses in the primary series (3 for DTP), which take the table's first row while later
+doses take its last. `NULL` (measles): each dose takes its own row, or the first row if it has none.}
 }
 \value{
 A list with `protection`, `short_term_waning` and `long_term_waning` (vectors of length `n_vacc`; waning
@@ -32,12 +40,12 @@ the table's `dose`, so that both measles doses used the second-dose row and one 
 sum of two rows (a protection of 1.75), and a single waning rate (the slowest in the table) was used for every
 stratum.
 
-The table has two rows of doses per disease (measles 1 and 2; diphtheria 1 and 6; pertussis 3 and 5) while the
-model has two measles doses and three DTP doses. Each modelled dose uses its own row if there is one and the
-first row otherwise. For measles that is simply dose 1 and dose 2. For DTP the `dose` tag is the number of doses
-received when the estimate applies: the first row (diphtheria 1, pertussis 3) is the three-dose primary series and
-the second (diphtheria 6, pertussis 5) the full schedule including boosters, which the model does not represent.
-So all three DTP doses get the primary-series row. That overstates protection after one or two doses; values for
-partial courses belong in the table as their own rows (with `dose` 1 and 2), not in code.
+The table has two rows of doses per disease (measles 1 and 2; diphtheria 1 and 6; pertussis 3 and 5). For
+measles each modelled dose uses its own row. For DTP the `dose` tag is the number of doses received when the
+estimate applies: the first row (diphtheria 1, pertussis 3) is the three-dose primary series and the second
+(diphtheria 6, pertussis 5) the full schedule including boosters. So the three primary doses (`n_primary`) get the
+first row and every booster (doses 4 to 6, see [dtp_booster_schedule()]) the second. That overstates protection
+after one or two primary doses, and after a first booster; values for partial courses belong in the table as their
+own rows, not in code.
 }
 \keyword{internal}

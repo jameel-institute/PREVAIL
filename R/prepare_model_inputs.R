@@ -21,6 +21,8 @@
 #' @param n_age Number of age groups in the model.
 #' @param n_risk Number of risk groups in the model.
 #' @param coverage_source Passed to [process_vaccination_routine()].
+#' @param boosters DTP booster doses to model, from [dtp_booster_schedule()] (`NULL` or zero rows for none). Each
+#'   adds a dose after the primary series, with its coverage from the WHO booster dose given in `coverage_dose`.
 #'
 #' @return A named list containing:
 #' \describe{
@@ -55,7 +57,8 @@ prepare_model_inputs <- function(
   year_end = "",
   n_age = 1,
   n_risk = 1,
-  coverage_source = "wuenic"
+  coverage_source = "wuenic",
+  boosters = NULL
 ) {
 
   #Establish the number of vaccines
@@ -66,6 +69,8 @@ prepare_model_inputs <- function(
     "pertussis"  = 3,
     0
   )
+  n_boosters <- if (is.null(boosters)) 0 else nrow(boosters)
+  number_of_vaccines <- number_of_vaccines + n_boosters
 
   # Step 1: Process demographic data
   demographic <- process_demography(
@@ -117,6 +122,25 @@ prepare_model_inputs <- function(
     year_end = demographic$input_data$year_end,
     coverage_source = coverage_source
   )
+
+  # DTP boosters: WHO reports their coverage as the 4th to 6th diphtheria-containing dose (whichever disease is
+  # modelled). Each modelled booster takes the coverage of the WHO dose given in `coverage_dose`. A coverage of exactly
+  # zero for a scheduled booster is a missing report, not a booster nobody received (the United Kingdom's official
+  # figure for its teenage booster is 0 in 2022 and 2023, after 83 to 87%), so it is dropped and the last reported
+  # coverage carried forward.
+  if (n_boosters > 0) {
+    booster_routine <- process_vaccination_routine(
+      vaccination_data = vaccination_data_routine,
+      iso = demographic$input_data$iso,
+      vaccine = "Diphtheria-containing vaccine, [456]th",
+      year_start = demographic$input_data$year_start,
+      year_end = demographic$input_data$year_end,
+      coverage_source = coverage_source
+    )
+    booster_routine <- booster_routine[booster_routine$dose_order %in% boosters$coverage_dose & booster_routine$coverage > 0, ]
+    booster_routine$dose_order <- boosters$dose[match(booster_routine$dose_order, boosters$coverage_dose)]
+    routine <- rbind(routine[is.na(routine$dose_order) | routine$dose_order <= 3, ], booster_routine, fill = TRUE)
+  }
 
   # Step 4: SIA vaccination data
   sia <- process_vaccination_sia(

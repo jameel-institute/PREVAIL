@@ -52,6 +52,7 @@ test_that("measles vaccine protection does not wane by default, and the table is
 test_that("every DTP dose uses the primary series row of the table", {
   for (disease in c("diphtheria", "pertussis")) {
     vp <- PREVAIL::vaccine_parameters[PREVAIL::vaccine_parameters$disease == disease, ]
+    vp <- vp[vp$vaccine == "DTP", ]  # the acellular rows (pertussis also has whole-cell rows, tagged DTwP)
     s <- PREVAIL:::vaccine_strata_parameters(vp, 7, vaccine_waning = TRUE)
     first <- min(vp$dose)
     expect_equal(s$table$table_dose, rep(first, 3), info = disease)
@@ -82,4 +83,20 @@ test_that("a custom schedule sets the age of each dose", {
   # second dose given to those with one dose, in the 5-9 group
   expect_gt(p$vaccination_coverage[2, 3, 1, y2010], 0)
   expect_equal(p$vaccination_coverage[1, 3, 1, y2010], 0)
+})
+
+test_that("a custom vaccine parameter without a dose applies to every dose, and with one only to that dose", {
+  all_doses <- custom_data_process_wrapper("GBR", "pertussis", R0 = 12, year_end = 2025,
+                                           custom_vaccine_parameters = data.frame(parameter = "waning", duration = "short", value = 6))
+  expect_equal(all_doses$history$vaccine_strata$short_term_waning_years, rep(6, all_doses$n_vacc %/% 2))
+  expect_false(anyNA(all_doses$short_term_waning))
+
+  primary <- custom_data_process_wrapper("PSE", "pertussis", R0 = 12, year_end = 2025,
+                                         custom_vaccine_parameters = data.frame(parameter = "protection", duration = "long",
+                                                                                value = 0.4, dose = 3))
+  tab <- primary$history$vaccine_strata
+  expect_equal(tab$long_term_protection[tab$dose <= 3], rep(0.4, 3))
+  expect_equal(tab$long_term_protection[tab$dose > 3], rep(0.5, sum(tab$dose > 3)))
+  # the whole-cell rows are still used for the parameters not given
+  expect_equal(tab$short_term_waning_years[tab$dose <= 3], rep(8, 3))
 })

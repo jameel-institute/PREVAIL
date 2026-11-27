@@ -86,6 +86,9 @@ expand_pre1980_vaccination <- function(processed_vaccination, vaccination_pre198
 #'   [build_transmission_history()].
 #' @param coverage_accuracy Multiplier on the odds of vaccination (see [coverage_to_daily_rate()]).
 #' @param vaccine_waning Passed to [resolve_vaccine_waning()].
+#' @param boosters DTP booster doses from [dtp_booster_schedule()], or `NULL`. They are doses 4 onwards, given at
+#'   their scheduled age, with coverage filled in before 2018 by [backfill_booster_coverage()].
+#' @param booster_since Passed to [backfill_booster_coverage()].
 #'
 #' @return A named list of parameters including the routine coverage and dose ages, SIA coverage, protection and
 #'   waning by stratum, the time-varying R0 and the seeding inputs.
@@ -112,7 +115,9 @@ case_vaccine_to_param <- function(
     reporting_fraction = 1,
     seed_floor = 10,
     coverage_accuracy = 1,
-    vaccine_waning = "default"
+    vaccine_waning = "default",
+    boosters = NULL,
+    booster_since = 1980
 ) {
 
   iso <- demog_data$input_data$iso
@@ -157,6 +162,10 @@ case_vaccine_to_param <- function(
   schedule <- filter_vaccine_schedule(vaccination_schedule, vaccination_type, iso)
   routine_coverage <- routine_dose_coverage(processed_vaccination, n_doses, years, percent = !custom_routine)
   dose_ages <- routine_dose_ages(schedule, n_doses, years)
+  if (!is.null(boosters) && nrow(boosters) > 0) {
+    routine_coverage <- backfill_booster_coverage(routine_coverage, years, booster_since)
+    dose_ages[, boosters$dose] <- rep(boosters$age, each = nrow(dose_ages))
+  }
 
   # custom routine data give the age of each dose directly
   if (custom_routine && "age" %in% names(processed_vaccination)) {
@@ -178,7 +187,8 @@ case_vaccine_to_param <- function(
   strata <- vaccine_strata_parameters(
     vaccine_parameters = vaccine_parameters,
     n_vacc = n_vacc,
-    vaccine_waning = resolve_vaccine_waning(vaccine_waning, disease)
+    vaccine_waning = resolve_vaccine_waning(vaccine_waning, disease),
+    n_primary = if (tolower(disease) %in% c("diphtheria", "pertussis")) 3 else NULL
   )
 
   age_vaccination_beta_modifier <- base::expand.grid(

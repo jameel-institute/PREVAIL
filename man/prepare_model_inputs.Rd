@@ -21,7 +21,8 @@ prepare_model_inputs(
   year_end = "",
   n_age = 1,
   n_risk = 1,
-  coverage_source = "wuenic"
+  coverage_source = "wuenic",
+  boosters = NULL
 )
 }
 \arguments{
@@ -58,6 +59,9 @@ prepare_model_inputs(
 \item{n_risk}{Number of risk groups in the model.}
 
 \item{coverage_source}{Passed to [process_vaccination_routine()].}
+
+\item{boosters}{DTP booster doses to model, from [dtp_booster_schedule()] (`NULL` or zero rows for none). Each
+adds a dose after the primary series, with its coverage from the WHO booster dose given in `coverage_dose`.}
 }
 \value{
 A named list containing:

@@ -45,7 +45,10 @@ data_load_process_wrapper <- function(
     coverage_accuracy = 1,
     vaccine_waning = "default",
     coverage_source = c("wuenic", "median"),
-    seed_floor = 10
+    seed_floor = 10,
+    dtp_boosters = TRUE,
+    booster_since = 1980,
+    pertussis_vaccine = c("schedule", "acellular", "whole_cell")
 ) {
 
   custom_data_process_wrapper(
@@ -64,7 +67,10 @@ data_load_process_wrapper <- function(
     coverage_accuracy = coverage_accuracy,
     vaccine_waning = vaccine_waning,
     coverage_source = match.arg(coverage_source),
-    seed_floor = seed_floor
+    seed_floor = seed_floor,
+    dtp_boosters = dtp_boosters,
+    booster_since = booster_since,
+    pertussis_vaccine = match.arg(pertussis_vaccine)
   )
 
 }

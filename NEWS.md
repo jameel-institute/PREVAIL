@@ -1,4 +1,6 @@
-# PREVAIL (development version)
+# PREVAIL 0.2.0.9000
+
+Additions for fitting diphtheria and pertussis serosurveys.
 
 * New `modelled_seroprevalence()`: the share of a serosurvey age band expected to test seropositive, from the
   immunity by age of `run_immunity_history()`, allowing for assay sensitivity and specificity, vaccine-protected
@@ -8,6 +10,28 @@
 * `run_immunity_history()` has a new argument `snapshot_years`, and returns immunity by age at the start of each of
   those years (`snapshots`), so that one run serves every serosurvey in a country. It also returns modelled
   infections by year and age group (`infections_by_age`).
+* DTP booster doses. Diphtheria and pertussis now give the booster doses in the country's latest WHO schedule as
+  doses 4 to 6 after the primary series (`dtp_boosters = TRUE`, the default; `FALSE` gives the primary series only,
+  as in 0.2.0). Each booster adds two vaccination strata, so the odin model is unchanged.
+  * Boosters are the scheduled ages after the first three, before age 18 (adult, pregnancy, travel and catch-up doses
+    are excluded). For pertussis only boosters with pertussis antigen count (DTwP, DTaP, Tdap), not Td or DT.
+  * Coverage is the WHO 4th to 6th diphtheria-containing dose. These data start in 2018, so before then each
+    booster's coverage is the same share of DTP3 as in its first years of data, from `booster_since` (default 1980).
+    A booster with no coverage data is left out (the United States reports only the 4th dose), and a reported
+    coverage of exactly 0 is treated as missing (the United Kingdom's teenage booster is 0 in 2022 and 2023).
+  * Boosters use the full-schedule row of the vaccine table (diphtheria 6, pertussis 5).
+  * In the 13 JICVP settings (state at the start of 2025), diphtheria R falls where the schedule has boosters: United
+    Kingdom 1.90 to 1.78, Palestine 1.68 to 1.45, Guatemala 1.83 to 1.73; effective susceptibility among 20 to 59
+    year olds falls by 1 to 23 points. Six settings have no boosters in their WHO schedule and are unchanged.
+    Diphtheria R is still above 1 in most settings, which is for the serosurvey fits to resolve.
+* Whole-cell pertussis vaccine. The pertussis rows of the vaccine table are from studies of acellular vaccine. New
+  rows tagged `DTwP` give a whole-cell primary series the same protection and twice the waning durations (8 and 16
+  years against 4 and 8); sources are in `vaccine_protection.xlsx` and `?vaccine_parameters`. These are provisional,
+  meant to be estimated. New argument `pertussis_vaccine`: `"schedule"` (default) takes the type from the country's
+  WHO schedule, which is one recent snapshot, so the type is applied to every year. Pertussis R stays at 1 (it is
+  taken to circulate every year); infections in 2015 to 2024 fall by 2 to 7% in the 13 settings.
+* Natural immunity and vaccine waning can be varied for fitting with the existing `custom_disease_parameters`
+  (`natural immunity waning period`) and `custom_vaccine_parameters`, both passed through `run_immunity_history()`.
 
 # PREVAIL 0.2.0
 

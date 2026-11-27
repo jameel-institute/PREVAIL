@@ -23,7 +23,9 @@ case_vaccine_to_param(
   reporting_fraction = 1,
   seed_floor = 10,
   coverage_accuracy = 1,
-  vaccine_waning = "default"
+  vaccine_waning = "default",
+  boosters = NULL,
+  booster_since = 1980
 )
 }
 \arguments{
@@ -59,6 +61,11 @@ case_vaccine_to_param(
 \item{coverage_accuracy}{Multiplier on the odds of vaccination (see [coverage_to_daily_rate()]).}
 
 \item{vaccine_waning}{Passed to [resolve_vaccine_waning()].}
+
+\item{boosters}{DTP booster doses from [dtp_booster_schedule()], or `NULL`. They are doses 4 onwards, given at
+their scheduled age, with coverage filled in before 2018 by [backfill_booster_coverage()].}
+
+\item{booster_since}{Passed to [backfill_booster_coverage()].}
 }
 \value{
 A named list of parameters including the routine coverage and dose ages, SIA coverage, protection and

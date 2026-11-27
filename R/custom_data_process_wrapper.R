@@ -36,6 +36,14 @@
 #'   diseases), `"table"` (the table for every disease, as in 0.1.0) or `"none"`. See [resolve_vaccine_waning()].
 #' @param coverage_source `"wuenic"` (default) or `"median"`; see [process_vaccination_routine()].
 #' @param seed_floor Minimum number of infections introduced each year under `"circulating_years"`. Default 10.
+#' @param dtp_boosters Logical; for diphtheria and pertussis, give the booster doses in the country's WHO schedule
+#'   as doses 4 to 6 (default `TRUE`). See [dtp_booster_schedule()]. `FALSE` gives the three-dose primary series only,
+#'   as in 0.2.0.
+#' @param booster_since First year boosters are given before their coverage data start in 2018 (default 1980). See
+#'   [backfill_booster_coverage()].
+#' @param pertussis_vaccine `"schedule"` (default: whole-cell or acellular as in the country's WHO schedule, see
+#'   [pertussis_vaccine_type()]), `"acellular"` or `"whole_cell"`. Sets which primary-series row of the vaccine
+#'   parameter table pertussis uses.
 #'
 #' @param custom_migration Optional. Data frame to override default migration data.
 #' @param custom_fertility Optional. Data frame to override default fertility data.
@@ -84,6 +92,9 @@ custom_data_process_wrapper <- function(
     vaccine_waning = "default",
     coverage_source = c("wuenic", "median"),
     seed_floor = 10,
+    dtp_boosters = TRUE,
+    booster_since = 1980,
+    pertussis_vaccine = c("schedule", "acellular", "whole_cell"),
     custom_migration = NA,
     custom_fertility = NA,
     custom_mortality = NA,
@@ -99,6 +110,7 @@ custom_data_process_wrapper <- function(
 
   transmission_history <- match.arg(transmission_history)
   coverage_source <- match.arg(coverage_source)
+  pertussis_vaccine <- match.arg(pertussis_vaccine)
   if (!isTRUE(WHO_seed_switch)) {
     warning("WHO_seed_switch is deprecated: WHO_seed_switch = FALSE is now transmission_history = \"circulating_years\" with circulation_threshold = 0")
     transmission_history <- "circulating_years"
@@ -142,6 +154,20 @@ custom_data_process_wrapper <- function(
   if (all(!is.na(custom_disease_parameters)))   datasets$disease_parameters   <- reformat_parameters(default_parameters = datasets$disease_parameters, custom_parameters = custom_disease_parameters, disease = disease, type = "disease")
   if (all(!is.na(custom_vaccine_parameters)))   datasets$vaccine_parameters   <- reformat_parameters(default_parameters = datasets$vaccine_parameters, custom_parameters = custom_vaccine_parameters, disease = disease, type = "vaccine")
 
+  # ---- DTP boosters and pertussis vaccine type ----
+  is_dtp <- tolower(disease) %in% c("diphtheria", "pertussis")
+  boosters <- if (is_dtp && isTRUE(dtp_boosters)) {
+    dtp_booster_schedule(datasets$vaccination_schedule, iso, disease, datasets$routine_vaccination)
+  } else {
+    NULL
+  }
+  if (tolower(disease) == "pertussis") {
+    if (pertussis_vaccine == "schedule") pertussis_vaccine <- pertussis_vaccine_type(datasets$vaccination_schedule, iso)
+    datasets$vaccine_parameters <- select_pertussis_vaccine(datasets$vaccine_parameters, pertussis_vaccine)
+  } else {
+    pertussis_vaccine <- NA_character_
+  }
+
   # ---- Prepare Inputs ----
   preprocessed <- prepare_model_inputs(
     iso = iso,
@@ -158,7 +184,8 @@ custom_data_process_wrapper <- function(
     vaccination_data_routine = datasets$routine_vaccination,
     vaccination_data_sia = datasets$sia_vaccination,
     year_start = year_start, year_end = year_end,
-    coverage_source = coverage_source
+    coverage_source = coverage_source,
+    boosters = boosters
   )
 
   # ---- Generate Parameters from Case and Vaccine Data ----
@@ -181,7 +208,9 @@ custom_data_process_wrapper <- function(
     reporting_fraction = reporting_fraction,
     seed_floor = seed_floor,
     coverage_accuracy = coverage_accuracy,
-    vaccine_waning = vaccine_waning
+    vaccine_waning = vaccine_waning,
+    boosters = boosters,
+    booster_since = booster_since
   )
 
   disease_value <- function(name) {
@@ -299,6 +328,7 @@ custom_data_process_wrapper <- function(
     coverage_accuracy = coverage_accuracy,
     vaccine_waning   = resolve_vaccine_waning(vaccine_waning, disease),
     coverage_source  = coverage_source,
+    pertussis_vaccine = pertussis_vaccine,
     demography_last_year = preprocessed$processed_demographic_data$input_data$demography_last_year
   )
 
@@ -307,6 +337,7 @@ custom_data_process_wrapper <- function(
     transmission = cv_params$transmission_summary,
     routine_coverage = cv_params$routine_coverage,
     dose_ages = cv_params$dose_ages,
+    boosters = boosters,
     vaccine_strata = cv_params$vaccine_strata$table
   )
 

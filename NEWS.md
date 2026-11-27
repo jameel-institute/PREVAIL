@@ -5,6 +5,9 @@
   people without detectable antibody and maternal antibody in infants.
 * New `serosurvey_loglik()`: binomial or beta-binomial log-likelihood of seropositive counts by age band. Together
   these are what fitting `reporting_fraction` and `coverage_accuracy` to serosurveys needs.
+* `run_immunity_history()` has a new argument `snapshot_years`, and returns immunity by age at the start of each of
+  those years (`snapshots`), so that one run serves every serosurvey in a country. It also returns modelled
+  infections by year and age group (`infections_by_age`).
 
 # PREVAIL 0.2.0
 

@@ -186,6 +186,9 @@ summarise_immunity <- function(state, params, R0) {
 #' @param seed Seed for the model's random number stream. Different seeds give different stochastic histories,
 #'   which mainly sets where in its epidemic cycle a setting is at the end.
 #' @param keep_params Logical; return the parameter list too? Default `FALSE`.
+#' @param snapshot_years Years at whose start to record immunity by age (as in `by_age`), for example the years of
+#'   several serosurveys, so that one run serves them all. Years outside the run are dropped with a warning.
+#'   Default `NULL`, none.
 #' @param ... Further arguments passed to [custom_data_process_wrapper()] (for example custom data).
 #'
 #' @return A list of class `prevail_immunity_history` with:
@@ -199,6 +202,9 @@ summarise_immunity <- function(state, params, R0) {
 #'   \item{`infections`}{By year: modelled infections (all ages and under five), reported cases, the reporting
 #'   fraction this implies (reported cases over modelled infections), seeded infections and whether transmission was
 #'   on.}
+#'   \item{`infections_by_age`}{Modelled infections by year (rows, named by year) and age group (columns).}
+#'   \item{`snapshots`}{Immunity by age at the start of each of `snapshot_years`: the columns of `by_age` with a
+#'   `year` column first, or `NULL` if none were asked for.}
 #'   \item{`coverage`}{By age group and dose: the share of the age group that has had at least that many doses at
 #'   the end of the run (`achieved`) against the mean reported routine coverage in the years its birth cohorts were
 #'   due the dose (`reported`). Campaign doses, the coverage accuracy and, where vaccine protection wanes, waning
@@ -229,6 +235,7 @@ run_immunity_history <- function(iso, disease, R0,
                                  year_end = "",
                                  seed = 1,
                                  keep_params = FALSE,
+                                 snapshot_years = NULL,
                                  ...) {
 
   transmission_history <- match.arg(transmission_history)
@@ -250,22 +257,37 @@ run_immunity_history <- function(iso, disease, R0,
   dust2::dust_system_set_state_initial(sys)
   index <- dust2::dust_unpack_index(sys)
   n_age <- params$n_age
-  first_age_group <- as.vector(index$new_case[1, , ])
+  # age group of each element of new_case (age by stratum by risk group)
+  case_age <- as.vector(slice.index(index$new_case, 1))
 
-  infections <- numeric(n_years)
-  infections_first_age_group <- numeric(n_years)
+  snapshot_years <- sort(unique(snapshot_years))
+  outside <- snapshot_years <= year_start | snapshot_years > year_end
+  if (any(outside)) {
+    warning("Dropping snapshot years outside ", year_start + 1, "-", year_end, ": ", paste(snapshot_years[outside], collapse = ", "))
+    snapshot_years <- snapshot_years[!outside]
+  }
+  current_compartments <- function() {
+    state <- dust2::dust_unpack_state(sys, dust2::dust_system_state(sys))
+    lapply(state[c("S", "E", "I", "R", "Is", "Rc")], function(x) {
+      array(x, dim = c(params$n_age, params$n_vacc, params$n_risk))
+    })
+  }
+
+  infections_by_age <- matrix(0, n_years, n_age)
+  snapshots <- list()
   for (y in seq_len(n_years)) {
     days <- ((y - 1) * 365 + 1):(y * 365)
     new_case <- dust2::dust_system_simulate(sys, days, index_state = as.vector(index$new_case))
-    by_state <- rowSums(new_case)
-    infections[y] <- sum(by_state)
-    infections_first_age_group[y] <- sum(by_state[match(first_age_group, as.vector(index$new_case))])
+    infections_by_age[y, ] <- rowsum(rowSums(new_case), case_age)[, 1]
+    if ((year_start + y) %in% snapshot_years) {
+      snapshot <- summarise_immunity(current_compartments(), params, R0)$by_age
+      snapshots[[length(snapshots) + 1]] <- cbind(year = year_start + y, snapshot)
+    }
   }
+  infections <- rowSums(infections_by_age)
+  infections_first_age_group <- infections_by_age[, 1]
 
-  state <- dust2::dust_unpack_state(sys, dust2::dust_system_state(sys))
-  compartments <- lapply(state[c("S", "E", "I", "R", "Is", "Rc")], function(x) {
-    array(x, dim = c(params$n_age, params$n_vacc, params$n_risk))
-  })
+  compartments <- current_compartments()
   immunity <- summarise_immunity(compartments, params, R0)
 
   history <- params$history$transmission[seq_len(n_years), , drop = FALSE]
@@ -278,6 +300,7 @@ run_immunity_history <- function(iso, disease, R0,
     seeded_infections = history$seeded_infections,
     transmission_on = history$transmission_on
   )
+  dimnames(infections_by_age) <- list(history$year, immunity$by_age$age)
 
   final_year <- n_years
   routine_latest <- params$history$routine_coverage[final_year, ]
@@ -316,6 +339,8 @@ run_immunity_history <- function(iso, disease, R0,
     summary = immunity[c("reff", "population", "susceptible", "vaccinated", "infected")],
     by_age = immunity$by_age,
     infections = infections_df,
+    infections_by_age = infections_by_age,
+    snapshots = if (length(snapshots)) do.call(rbind, snapshots) else NULL,
     coverage = cohort_coverage(compartments, params),
     state = list(
       S0 = round(compartments$S),

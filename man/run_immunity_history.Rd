@@ -18,6 +18,7 @@ run_immunity_history(
   year_end = "",
   seed = 1,
   keep_params = FALSE,
+  snapshot_years = NULL,
   ...
 )
 }
@@ -37,6 +38,10 @@ which mainly sets where in its epidemic cycle a setting is at the end.}
 
 \item{keep_params}{Logical; return the parameter list too? Default `FALSE`.}
 
+\item{snapshot_years}{Years at whose start to record immunity by age (as in `by_age`), for example the years of
+several serosurveys, so that one run serves them all. Years outside the run are dropped with a warning.
+Default `NULL`, none.}
+
 \item{...}{Further arguments passed to [custom_data_process_wrapper()] (for example custom data).}
 }
 \value{
@@ -51,6 +56,9 @@ A list of class `prevail_immunity_history` with:
   \item{`infections`}{By year: modelled infections (all ages and under five), reported cases, the reporting
   fraction this implies (reported cases over modelled infections), seeded infections and whether transmission was
   on.}
+  \item{`infections_by_age`}{Modelled infections by year (rows, named by year) and age group (columns).}
+  \item{`snapshots`}{Immunity by age at the start of each of `snapshot_years`: the columns of `by_age` with a
+  `year` column first, or `NULL` if none were asked for.}
   \item{`coverage`}{By age group and dose: the share of the age group that has had at least that many doses at
   the end of the run (`achieved`) against the mean reported routine coverage in the years its birth cohorts were
   due the dose (`reported`). Campaign doses, the coverage accuracy and, where vaccine protection wanes, waning

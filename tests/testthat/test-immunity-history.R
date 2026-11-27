@@ -90,3 +90,31 @@ test_that("an ensemble can be written as JSON and read back", {
   single <- write_immunity_json(ens$worlds[[1]])
   expect_length(jsonlite::fromJSON(single, simplifyVector = FALSE)$worlds, 1)
 })
+
+test_that("snapshots record immunity by age in earlier years of the same run", {
+  skip_if_slow()
+  expect_warning(
+    h <- run_immunity_history("GBR", "measles", R0 = 15, year_end = 2000, seed = 2,
+                              snapshot_years = c(2000, 1980, 2030, 1990)),
+    "2030"
+  )
+  expect_equal(unique(h$snapshots$year), c(1980, 1990, 2000))
+  expect_equal(names(h$snapshots), c("year", names(h$by_age)))
+  # the snapshot at the end of the run is the run's own immunity by age
+  final <- h$snapshots[h$snapshots$year == 2000, -1]
+  rownames(final) <- NULL
+  expect_equal(final, h$by_age)
+  # and an earlier snapshot is close to the end of a run stopped in that year (where coverage data start before it;
+  # inputs such as back-filled coverage depend a little on year_end, so the two are not identical)
+  short <- run_immunity_history("GBR", "measles", R0 = 15, year_end = 1990, seed = 2)
+  earlier <- h$snapshots[h$snapshots$year == 1990, -1]
+  rownames(earlier) <- NULL
+  expect_equal(earlier$immune_infection, short$by_age$immune_infection, tolerance = 0.01)
+  expect_null(short$snapshots)
+
+  # infections by age sum to the yearly totals
+  expect_equal(dim(h$infections_by_age), c(nrow(h$infections), h$dims$n_age))
+  expect_equal(rownames(h$infections_by_age), as.character(h$infections$year))
+  expect_equal(unname(rowSums(h$infections_by_age)), h$infections$infections)
+  expect_equal(unname(h$infections_by_age[, 1]), h$infections$infections_first_age_group)
+})

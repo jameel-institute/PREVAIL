@@ -1,0 +1,74 @@
+# Daily Vaccination Probability that Achieves a Target Coverage
+
+The model moves people out of an age group at a constant rate
+(\`aging_rate\` per day), so the time spent in a group is geometric
+rather than a fixed number of years. With a daily vaccination
+probability \`p\` (applied after ageing on each day, as in the model)
+the share of a cohort that has been vaccinated by the time it leaves the
+group is \`p / (a + p (1 - a))\`. This function inverts that
+relationship, so that the share vaccinated on leaving the group equals
+\`coverage\`: \$\$p = \frac{a c}{1 - c (1 - a)}\$\$ which is close to
+\`a c / (1 - c)\`: the ageing rate times the odds of being vaccinated.
+
+## Usage
+
+``` r
+coverage_to_daily_rate(
+  coverage,
+  aging_rate,
+  coverage_accuracy = 1,
+  max_coverage = 0.99
+)
+```
+
+## Arguments
+
+- coverage:
+
+  Target coverage (proportion) on leaving the age group. For second and
+  later doses this is the coverage among those who have had the previous
+  dose.
+
+- aging_rate:
+
+  Daily probability of ageing out of the model age group in which the
+  dose is given.
+
+- coverage_accuracy:
+
+  Multiplier on the odds of vaccination. Default 1.
+
+- max_coverage:
+
+  Coverage is capped at this value (default 0.99) so that the rate stays
+  finite.
+
+## Value
+
+Daily vaccination probability, between 0 and 1.
+
+## Details
+
+PREVAIL 0.1.0 used \`1 - (1 - c)^(1/365)\` spread over the years in the
+age group, which assumes everyone spends exactly that many years in the
+group: a reported coverage of 90% then gave about 70% in the model and
+no input could give more than about 82%.
+
+The relationship is exact for a steady flow of people through the age
+group. Where the number of births is changing quickly the share
+vaccinated in the model drifts from the target by up to about a
+percentage point.
+
+The rate applies across the whole age group, from its first day. With
+the default five-year age groups a dose scheduled at 9 months is given
+at a constant rate from birth to age 5, so the model's infants are as
+likely to be vaccinated as its four year olds: too many vaccinated
+infants and too few vaccinated four year olds, with the right coverage
+on leaving the group. The age structure cannot do better than this; for
+questions about infants use finer age groups (for example
+\`new_age_breaks = c(0, 1, 2, 5, 10, ...)\`).
+
+\`coverage_accuracy\` multiplies the odds of being vaccinated, to
+represent true coverage differing from reported coverage: 1 takes the
+data at face value, 2 halves the unvaccinated share when coverage is
+high, 0.5 roughly doubles it.

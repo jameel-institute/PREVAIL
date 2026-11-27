@@ -1,0 +1,44 @@
+# Compare Two Transmission Scenarios
+
+This function compares two transmission scenarios by: 1. Combining case
+output data and generating comparative line and ribbon plots. 2.
+Producing summary statistics including peak and total cases. 3.
+Generating cumulative case trajectories. 4. Comparing susceptible
+proportions over time between the scenarios.
+
+## Usage
+
+``` r
+scenario_compare(scenario_1, scenario_2)
+```
+
+## Arguments
+
+- scenario_1:
+
+  A named list of outputs from scenario 1, including: -
+  \`select_state_plot\$data\`: Time-series summary data
+  (\`data.table\`) - \`box_data\`: Peak/total case data by \`run\` -
+  \`cumulative_case_plot\$data\`: Cumulative case trajectories -
+  \`susceptibility_data\`: Long-format susceptibility proportions by
+  time
+
+- scenario_2:
+
+  Same structure as \`scenario_1\`, for the second scenario.
+
+## Value
+
+A named list containing:
+
+- summary_plot:
+
+  A combined patchwork plot of all summary graphics.
+
+- summary_table:
+
+  A formatted \`gt\` table of case summary statistics.
+
+- individual_plots:
+
+  A list of individual \`ggplot2\` plots for further use.

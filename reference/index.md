@@ -1,0 +1,109 @@
+# Package index
+
+## All functions
+
+- [`PREVAIL_locations`](https://jameel-institute.github.io/PREVAIL/reference/PREVAIL_locations.md)
+  : Country and Territory ISO3 Codes
+- [`UN_WPP_fertility`](https://jameel-institute.github.io/PREVAIL/reference/UN_WPP_fertility.md)
+  : UN World Population Prospects 2024: Fertility Rates
+- [`UN_WPP_migration`](https://jameel-institute.github.io/PREVAIL/reference/UN_WPP_migration.md)
+  : UN World Population Prospects 2024: Net Migration Rate
+- [`UN_WPP_mortality`](https://jameel-institute.github.io/PREVAIL/reference/UN_WPP_mortality.md)
+  : UN World Population Prospects 2024: Crude Death Rates
+- [`UN_WPP_population_female`](https://jameel-institute.github.io/PREVAIL/reference/UN_WPP_population_female.md)
+  : UN World Population Prospects 2024: Female Population
+- [`UN_WPP_population_total`](https://jameel-institute.github.io/PREVAIL/reference/UN_WPP_population_total.md)
+  : UN World Population Prospects 2024: Total Population
+- [`VIMC_vaccination_sia`](https://jameel-institute.github.io/PREVAIL/reference/VIMC_vaccination_sia.md)
+  : Supplementary Immunization Activities (SIA) Coverage Estimates
+- [`WHO_disease_reports`](https://jameel-institute.github.io/PREVAIL/reference/WHO_disease_reports.md)
+  : WHO Global Reported Cases of Vaccine-Preventable Diseases
+  (1980–2023)
+- [`WHO_vaccination_routine`](https://jameel-institute.github.io/PREVAIL/reference/WHO_vaccination_routine.md)
+  : WHO Routine Infant Immunization Coverage (WUENIC)
+- [`WHO_vaccination_schedule`](https://jameel-institute.github.io/PREVAIL/reference/WHO_vaccination_schedule.md)
+  : WHO Reported Vaccination Schedules
+- [`WHO_vaccination_sia`](https://jameel-institute.github.io/PREVAIL/reference/WHO_vaccination_sia.md)
+  : WHO Supplementary Immunization Activities (SIA) Vaccination Data
+- [`age_breaks_to_labels()`](https://jameel-institute.github.io/PREVAIL/reference/age_breaks_to_labels.md)
+  : Convert Age Break String to Age Group Labels
+- [`aggregate_contact_matrix()`](https://jameel-institute.github.io/PREVAIL/reference/aggregate_contact_matrix.md)
+  : aggregate_contact_matrix
+- [`aggregate_model_output_by_time()`](https://jameel-institute.github.io/PREVAIL/reference/aggregate_model_output_by_time.md)
+  : Aggregate Model Output by Time Units (State-Specific Aggregation)
+- [`calc_aging_and_repro()`](https://jameel-institute.github.io/PREVAIL/reference/calc_aging_and_repro.md)
+  : Calculate Aging Rates, Reproductive Parameters, and Maternal
+  Protection
+- [`calculate_current_susceptibility()`](https://jameel-institute.github.io/PREVAIL/reference/calculate_current_susceptibility.md)
+  : Calculate Final Susceptibility and Recovered States
+- [`combine_ggplot()`](https://jameel-institute.github.io/PREVAIL/reference/combine_ggplot.md)
+  : Combine Two ggplot2 Plots with Consistent Style, Geom, and Axis
+  Expansion
+- [`compare_weighted_inputs()`](https://jameel-institute.github.io/PREVAIL/reference/compare_weighted_inputs.md)
+  : Compare Two Inputs Using Population Weights or Sum
+- [`contact_matricies`](https://jameel-institute.github.io/PREVAIL/reference/contact_matricies.md)
+  : Social Contact Matrices from Prem et al. (2017)
+- [`custom_data_process_wrapper()`](https://jameel-institute.github.io/PREVAIL/reference/custom_data_process_wrapper.md)
+  : custom_data_process_wrapper
+- [`data_load_process_wrapper()`](https://jameel-institute.github.io/PREVAIL/reference/data_load_process_wrapper.md)
+  : data_load_process_wrapper
+- [`demographic_check()`](https://jameel-institute.github.io/PREVAIL/reference/demographic_check.md)
+  : Compare Model Population to Population Reference Estimates
+- [`disease_parameters`](https://jameel-institute.github.io/PREVAIL/reference/disease_parameters.md)
+  : Disease Natural History Parameters
+- [`effective_reproduction_number()`](https://jameel-institute.github.io/PREVAIL/reference/effective_reproduction_number.md)
+  : Effective Reproduction Number from a Model State
+- [`fit_transmission_model()`](https://jameel-institute.github.io/PREVAIL/reference/fit_transmission_model.md)
+  : Fit Transmission Model Using PMCMC
+- [`generate_domain_from_map()`](https://jameel-institute.github.io/PREVAIL/reference/generate_domain_from_map.md)
+  : Generate a Valid Parameter Domain Around MAP Estimates
+- [`get_WHO_region()`](https://jameel-institute.github.io/PREVAIL/reference/get_WHO_region.md)
+  : Assign WHO Region to ISO3 Country Codes
+- [`get_income_group()`](https://jameel-institute.github.io/PREVAIL/reference/get_income_group.md)
+  : Assign World Bank Income Group from ISO3 Country Codes
+- [`modelled_seroprevalence()`](https://jameel-institute.github.io/PREVAIL/reference/modelled_seroprevalence.md)
+  : Modelled Seroprevalence for Serosurvey Age Bands
+- [`plot_baseline_and_fitted_sero()`](https://jameel-institute.github.io/PREVAIL/reference/plot_baseline_and_fitted_sero.md)
+  : Plot Model Seropositivity: Baseline vs Fitted vs Data
+- [`plot_fitting_results()`](https://jameel-institute.github.io/PREVAIL/reference/plot_fitting_results.md)
+  : Plot PMCMC Fitting Results: Parameter Traces and Log-Likelihood
+- [`prepare_future_data()`](https://jameel-institute.github.io/PREVAIL/reference/prepare_future_data.md)
+  : Prepare Future Scenario Parameters for Transmission Model
+- [`rds_names`](https://jameel-institute.github.io/PREVAIL/reference/rds_names.md)
+  : Names of Data Objects Included in the PREVAIL Package
+- [`reformat_cases()`](https://jameel-institute.github.io/PREVAIL/reference/reformat_cases.md)
+  : Reformat Custom Case Data for Model Input
+- [`reformat_contact_matrix()`](https://jameel-institute.github.io/PREVAIL/reference/reformat_contact_matrix.md)
+  : Reformat Data.frame into a Contact Matrix
+- [`reformat_demographic_data()`](https://jameel-institute.github.io/PREVAIL/reference/reformat_demographic_data.md)
+  : Reformat Demographic Data to Model Structure
+- [`reformat_parameters()`](https://jameel-institute.github.io/PREVAIL/reference/reformat_parameters.md)
+  : Reformat Parameter Table for Model Input
+- [`reformat_vaccination()`](https://jameel-institute.github.io/PREVAIL/reference/reformat_vaccination.md)
+  : Reformat Custom Vaccination Data for Model Input
+- [`reformat_vaccination_schedule()`](https://jameel-institute.github.io/PREVAIL/reference/reformat_vaccination_schedule.md)
+  : Reformat Vaccination Schedule Data
+- [`run_immunity_ensemble()`](https://jameel-institute.github.io/PREVAIL/reference/run_immunity_ensemble.md)
+  : Run an Ensemble of Histories
+- [`run_immunity_history()`](https://jameel-institute.github.io/PREVAIL/reference/run_immunity_history.md)
+  : Run the Historical Period and Summarise Present-Day Immunity
+- [`run_model()`](https://jameel-institute.github.io/PREVAIL/reference/run_model.md)
+  : Run Dust Model Simulation
+- [`run_model_unpack_results()`](https://jameel-institute.github.io/PREVAIL/reference/run_model_unpack_results.md)
+  : Run and Unpack Dust Model Simulation Results
+- [`scenario_compare()`](https://jameel-institute.github.io/PREVAIL/reference/scenario_compare.md)
+  : Compare Two Transmission Scenarios
+- [`serosurvey_loglik()`](https://jameel-institute.github.io/PREVAIL/reference/serosurvey_loglik.md)
+  : Log-Likelihood of Serosurvey Data
+- [`summarise_immunity()`](https://jameel-institute.github.io/PREVAIL/reference/summarise_immunity.md)
+  : Summarise the Immunity of a Model State
+- [`summary_plots()`](https://jameel-institute.github.io/PREVAIL/reference/summary_plots.md)
+  : Generate Summary Plots and Susceptibility Profiles
+- [`unpack_dust2()`](https://jameel-institute.github.io/PREVAIL/reference/unpack_dust2.md)
+  : Unpack Dust Model State Data
+- [`vaccination_pre1980`](https://jameel-institute.github.io/PREVAIL/reference/vaccination_pre1980.md)
+  : Historical Vaccination Introduction and Coverage (Pre-1980)
+- [`vaccine_parameters`](https://jameel-institute.github.io/PREVAIL/reference/vaccine_parameters.md)
+  : Vaccine Efficacy and Duration Parameters
+- [`write_immunity_json()`](https://jameel-institute.github.io/PREVAIL/reference/write_immunity_json.md)
+  : Write Present-Day Immunity as JSON

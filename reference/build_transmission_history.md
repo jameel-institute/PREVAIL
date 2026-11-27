@@ -1,0 +1,112 @@
+# Transmission and Seeding over the Historical Period
+
+Builds the time-varying basic reproduction number and the seeded
+infections for a historical run, under a stated assumption about how
+reported cases relate to true infections.
+
+## Usage
+
+``` r
+build_transmission_history(
+  case_reports,
+  population,
+  years,
+  R0,
+  disease,
+  transmission_history = c("circulating_years", "reported_cases_only"),
+  circulation_threshold = 2,
+  reporting_fraction = 1,
+  seed_floor = 10
+)
+```
+
+## Arguments
+
+- case_reports:
+
+  Data frame of WHO case reports for one country and disease, with
+  columns \`year\` and \`cases\`. Years with zero reported cases should
+  be included; missing reports can be \`NA\` or absent.
+
+- population:
+
+  Matrix of population (thousands) by year (rows, in the order of
+  \`years\`) and single year of age (columns).
+
+- years:
+
+  Model years.
+
+- R0:
+
+  Basic reproduction number while transmission is on.
+
+- disease:
+
+  Disease name.
+
+- transmission_history:
+
+  The reporting assumption (see above).
+
+- circulation_threshold:
+
+  Reported cases per million people per year at or above which the
+  disease is taken to be circulating. Default 2.
+
+- reporting_fraction:
+
+  Share of infections that are reported (default 1).
+
+- seed_floor:
+
+  Minimum number of infections introduced each year under
+  \`"circulating_years"\` (default 10).
+
+## Value
+
+A list with \`R0\` and \`tt_R0\` (days), \`seed_data\` (long format, by
+single year of age), \`tt_seeded\` (days), and \`summary\`, a data frame
+by year of reported cases, seeded infections and whether transmission
+was on.
+
+## Reporting assumptions
+
+WHO case reports badly under-count infections in most settings, but how
+badly is not known. Until reporting fractions are estimated (for example
+from seroprevalence surveys) the history has to be run under an
+assumption, chosen with \`transmission_history\`:
+
+- \`"circulating_years"\`:
+
+  Reported cases are taken as evidence of whether the disease was
+  circulating, not of how many infections there were. Transmission is on
+  (at \`R0\`) in every year with at least \`circulation_threshold\`
+  reported cases per million people, and in every year before reporting
+  starts; it is off in years with fewer. A year with no report keeps the
+  status of the year before. Pertussis is treated as circulating in
+  every year, because it circulates everywhere whether or not it is
+  reported. Reported cases (divided by \`reporting_fraction\`), and
+  never fewer than \`seed_floor\` infections, are introduced on the
+  first day of each year so that infection can return after fade-out.
+  The number of infections is whatever the model implies. With
+  \`circulation_threshold = 0\` transmission is on throughout (what
+  \`WHO_seed_switch = FALSE\` meant in 0.1.0).
+
+- \`"reported_cases_only"\`:
+
+  Case reporting and reported vaccination are taken as complete.
+  Transmission runs at \`R0\` until the first year with a reported case
+  and is switched off from then on; after that the only infections are
+  the reported cases (divided by \`reporting_fraction\`), introduced on
+  the first day of each year. This is the assumption PREVAIL 0.1.0 made,
+  with \`reporting_fraction = 1\`.
+
+Seeded infections enter the exposed compartment, placed across ages and
+vaccination strata in proportion to the effective number of susceptibles
+on the day.
+
+\`reporting_fraction\` is where an estimated reporting level slots in:
+seeded infections are the reported cases divided by it. It can be a
+single number or a vector named by year (years without a name take the
+value of the nearest named year).

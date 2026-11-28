@@ -31,6 +31,7 @@
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/always_circulating_diseases.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/apportion_whole.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/array_from_df.html</loc></url>
+<url><loc>https://jameel-institute.github.io/PREVAIL/reference/backfill_booster_coverage.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/build_transmission_history.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/build_vaccination_rates.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/calc_aging_and_repro.html</loc></url>
@@ -50,6 +51,7 @@
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/demographic_check.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/df_to_array.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/disease_parameters.html</loc></url>
+<url><loc>https://jameel-institute.github.io/PREVAIL/reference/dtp_booster_schedule.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/effective_reproduction_number.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/ensemble_diagnostics.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/expand_pre1980_vaccination.html</loc></url>
@@ -68,6 +70,7 @@
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/modelled_seroprevalence.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/param_packager.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/parse_schedule_age.html</loc></url>
+<url><loc>https://jameel-institute.github.io/PREVAIL/reference/pertussis_vaccine_type.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/pipe.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/plot_baseline_and_fitted_sero.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/plot_fitting_results.html</loc></url>
@@ -97,6 +100,7 @@
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/run_model_unpack_results.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/scale_vaccination_rates.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/scenario_compare.html</loc></url>
+<url><loc>https://jameel-institute.github.io/PREVAIL/reference/select_pertussis_vaccine.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/serosurvey_loglik.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/split_and_sum.html</loc></url>
 <url><loc>https://jameel-institute.github.io/PREVAIL/reference/summarise_immunity.html</loc></url>

@@ -22,7 +22,10 @@ data_load_process_wrapper(
   coverage_accuracy = 1,
   vaccine_waning = "default",
   coverage_source = c("wuenic", "median"),
-  seed_floor = 10
+  seed_floor = 10,
+  dtp_boosters = TRUE,
+  booster_since = 1980,
+  pertussis_vaccine = c("schedule", "acellular", "whole_cell")
 )
 ```
 
@@ -117,6 +120,25 @@ data_load_process_wrapper(
 
   Minimum number of infections introduced each year under
   \`"circulating_years"\`. Default 10.
+
+- dtp_boosters:
+
+  Logical; for diphtheria and pertussis, give the booster doses in the
+  country's WHO schedule as doses 4 to 6 (default \`TRUE\`). See
+  \[dtp_booster_schedule()\]. \`FALSE\` gives the three-dose primary
+  series only, as in 0.2.0.
+
+- booster_since:
+
+  First year boosters are given before their coverage data start in 2018
+  (default 1980). See \[backfill_booster_coverage()\].
+
+- pertussis_vaccine:
+
+  \`"schedule"\` (default: whole-cell or acellular as in the country's
+  WHO schedule, see \[pertussis_vaccine_type()\]), \`"acellular"\` or
+  \`"whole_cell"\`. Sets which primary-series row of the vaccine
+  parameter table pertussis uses.
 
 ## Value
 

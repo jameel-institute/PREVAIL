@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PREVAIL</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,10 @@
 <span>  coverage_accuracy <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  vaccine_waning <span class="op">=</span> <span class="st">"default"</span>,</span>
 <span>  coverage_source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"wuenic"</span>, <span class="st">"median"</span><span class="op">)</span>,</span>
-<span>  seed_floor <span class="op">=</span> <span class="fl">10</span></span>
+<span>  seed_floor <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  dtp_boosters <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  booster_since <span class="op">=</span> <span class="fl">1980</span>,</span>
+<span>  pertussis_vaccine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"schedule"</span>, <span class="st">"acellular"</span>, <span class="st">"whole_cell"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -142,6 +145,23 @@ diseases), `"table"` (the table for every disease, as in 0.1.0) or `"none"`. See
 
 <dt id="arg-seed-floor">seed_floor<a class="anchor" aria-label="anchor" href="#arg-seed-floor"></a></dt>
 <dd><p>Minimum number of infections introduced each year under `"circulating_years"`. Default 10.</p></dd>
+
+
+<dt id="arg-dtp-boosters">dtp_boosters<a class="anchor" aria-label="anchor" href="#arg-dtp-boosters"></a></dt>
+<dd><p>Logical; for diphtheria and pertussis, give the booster doses in the country's WHO schedule
+as doses 4 to 6 (default `TRUE`). See [dtp_booster_schedule()]. `FALSE` gives the three-dose primary series only,
+as in 0.2.0.</p></dd>
+
+
+<dt id="arg-booster-since">booster_since<a class="anchor" aria-label="anchor" href="#arg-booster-since"></a></dt>
+<dd><p>First year boosters are given before their coverage data start in 2018 (default 1980). See
+[backfill_booster_coverage()].</p></dd>
+
+
+<dt id="arg-pertussis-vaccine">pertussis_vaccine<a class="anchor" aria-label="anchor" href="#arg-pertussis-vaccine"></a></dt>
+<dd><p>`"schedule"` (default: whole-cell or acellular as in the country's WHO schedule, see
+[pertussis_vaccine_type()]), `"acellular"` or `"whole_cell"`. Sets which primary-series row of the vaccine
+parameter table pertussis uses.</p></dd>
 
 </dl></div>
     <div class="section level2">

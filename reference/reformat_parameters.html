@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PREVAIL</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,7 +60,9 @@
 
 
 <dl><dt id="arg-custom-parameters">custom_parameters<a class="anchor" aria-label="anchor" href="#arg-custom-parameters"></a></dt>
-<dd><p>Data frame of custom parameters.</p></dd>
+<dd><p>Data frame of custom parameters. For vaccine parameters, the columns are `parameter`
+(`"protection"` or `"waning"`), `duration` (`"short"` or `"long"`), `value` and optionally `dose` (a dose of the
+default table, for example 3 for the pertussis primary series). A row without a `dose` applies to every dose.</p></dd>
 
 
 <dt id="arg-default-parameters">default_parameters<a class="anchor" aria-label="anchor" href="#arg-default-parameters"></a></dt>

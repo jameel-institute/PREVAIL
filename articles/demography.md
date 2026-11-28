@@ -298,7 +298,8 @@ model we then just have to supply the parameters required.
 
 custom_model_run <- run_model_unpack_results(
   params = custom_params,
-  no_runs = 1
+  no_runs = 1,
+  simulation_length = 500
 )
 ```
 

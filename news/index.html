@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PREVAIL</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,11 +41,20 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="prevail-development-version">PREVAIL (development version)<a class="anchor" aria-label="anchor" href="#prevail-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.0.9000" id="prevail-0209000">PREVAIL 0.2.0.9000<a class="anchor" aria-label="anchor" href="#prevail-0209000"></a></h2>
+<p>Additions for fitting diphtheria and pertussis serosurveys.</p>
 <ul><li>New <code><a href="../reference/modelled_seroprevalence.html">modelled_seroprevalence()</a></code>: the share of a serosurvey age band expected to test seropositive, from the immunity by age of <code><a href="../reference/run_immunity_history.html">run_immunity_history()</a></code>, allowing for assay sensitivity and specificity, vaccine-protected people without detectable antibody and maternal antibody in infants.</li>
 <li>New <code><a href="../reference/serosurvey_loglik.html">serosurvey_loglik()</a></code>: binomial or beta-binomial log-likelihood of seropositive counts by age band. Together these are what fitting <code>reporting_fraction</code> and <code>coverage_accuracy</code> to serosurveys needs.</li>
 <li>
 <code><a href="../reference/run_immunity_history.html">run_immunity_history()</a></code> has a new argument <code>snapshot_years</code>, and returns immunity by age at the start of each of those years (<code>snapshots</code>), so that one run serves every serosurvey in a country. It also returns modelled infections by year and age group (<code>infections_by_age</code>).</li>
+<li>DTP booster doses. Diphtheria and pertussis now give the booster doses in the country’s latest WHO schedule as doses 4 to 6 after the primary series (<code>dtp_boosters = TRUE</code>, the default; <code>FALSE</code> gives the primary series only, as in 0.2.0). Each booster adds two vaccination strata, so the odin model is unchanged.
+<ul><li>Boosters are the scheduled ages after the first three, before age 18 (adult, pregnancy, travel and catch-up doses are excluded). For pertussis only boosters with pertussis antigen count (DTwP, DTaP, Tdap), not Td or DT.</li>
+<li>Coverage is the WHO 4th to 6th diphtheria-containing dose. These data start in 2018, so before then each booster’s coverage is the same share of DTP3 as in its first years of data, from <code>booster_since</code> (default 1980). A booster with no coverage data is left out (the United States reports only the 4th dose), and a reported coverage of exactly 0 is treated as missing (the United Kingdom’s teenage booster is 0 in 2022 and 2023).</li>
+<li>Boosters use the full-schedule row of the vaccine table (diphtheria 6, pertussis 5).</li>
+<li>In the 13 JICVP settings (state at the start of 2025), diphtheria R falls where the schedule has boosters: United Kingdom 1.90 to 1.78, Palestine 1.68 to 1.45, Guatemala 1.83 to 1.73; effective susceptibility among 20 to 59 year olds falls by 1 to 23 points. Six settings have no boosters in their WHO schedule and are unchanged. Diphtheria R is still above 1 in most settings, which is for the serosurvey fits to resolve.</li>
+</ul></li>
+<li>Whole-cell pertussis vaccine. The pertussis rows of the vaccine table are from studies of acellular vaccine. New rows tagged <code>DTwP</code> give a whole-cell primary series the same protection and twice the waning durations (8 and 16 years against 4 and 8); sources are in <code>vaccine_protection.xlsx</code> and <code><a href="../reference/vaccine_parameters.html">?vaccine_parameters</a></code>. These are provisional, meant to be estimated. New argument <code>pertussis_vaccine</code>: <code>"schedule"</code> (default) takes the type from the country’s WHO schedule, which is one recent snapshot, so the type is applied to every year. Pertussis R stays at 1 (it is taken to circulate every year); infections in 2015 to 2024 fall by 2 to 7% in the 13 settings.</li>
+<li>Natural immunity and vaccine waning can be varied for fitting with the existing <code>custom_disease_parameters</code> (<code>natural immunity waning period</code>) and <code>custom_vaccine_parameters</code>, both passed through <code><a href="../reference/run_immunity_history.html">run_immunity_history()</a></code>.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="prevail-020">PREVAIL 0.2.0<a class="anchor" aria-label="anchor" href="#prevail-020"></a></h2>

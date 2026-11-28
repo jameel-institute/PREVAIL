@@ -11,7 +11,7 @@ prior to 1980 if available."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">PREVAIL</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,7 +72,9 @@ prior to 1980 if available.</p>
 <span>  reporting_fraction <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  seed_floor <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  coverage_accuracy <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  vaccine_waning <span class="op">=</span> <span class="st">"default"</span></span>
+<span>  vaccine_waning <span class="op">=</span> <span class="st">"default"</span>,</span>
+<span>  boosters <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  booster_since <span class="op">=</span> <span class="fl">1980</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -143,6 +145,15 @@ prior to 1980 if available.</p>
 
 <dt id="arg-vaccine-waning">vaccine_waning<a class="anchor" aria-label="anchor" href="#arg-vaccine-waning"></a></dt>
 <dd><p>Passed to [resolve_vaccine_waning()].</p></dd>
+
+
+<dt id="arg-boosters">boosters<a class="anchor" aria-label="anchor" href="#arg-boosters"></a></dt>
+<dd><p>DTP booster doses from [dtp_booster_schedule()], or `NULL`. They are doses 4 onwards, given at
+their scheduled age, with coverage filled in before 2018 by [backfill_booster_coverage()].</p></dd>
+
+
+<dt id="arg-booster-since">booster_since<a class="anchor" aria-label="anchor" href="#arg-booster-since"></a></dt>
+<dd><p>Passed to [backfill_booster_coverage()].</p></dd>
 
 </dl></div>
     <div class="section level2">

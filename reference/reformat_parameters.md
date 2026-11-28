@@ -18,7 +18,11 @@ reformat_parameters(
 
 - custom_parameters:
 
-  Data frame of custom parameters.
+  Data frame of custom parameters. For vaccine parameters, the columns
+  are \`parameter\` (\`"protection"\` or \`"waning"\`), \`duration\`
+  (\`"short"\` or \`"long"\`), \`value\` and optionally \`dose\` (a dose
+  of the default table, for example 3 for the pertussis primary series).
+  A row without a \`dose\` applies to every dose.
 
 - default_parameters:
 

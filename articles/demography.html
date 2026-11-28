@@ -19,7 +19,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PREVAIL</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -328,7 +328,8 @@ the model we then just have to supply the parameters required.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">custom_model_run</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_model_unpack_results.html">run_model_unpack_results</a></span><span class="op">(</span></span>
 <span>  params <span class="op">=</span> <span class="va">custom_params</span>,</span>
-<span>  no_runs <span class="op">=</span> <span class="fl">1</span></span>
+<span>  no_runs <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  simulation_length <span class="op">=</span> <span class="fl">500</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>From this, you can then run the additional plotting functions,
 extract current susceptibility and look at onward scenarios as

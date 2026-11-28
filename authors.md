@@ -14,13 +14,13 @@ Source:
 [`DESCRIPTION`](https://github.com/jameel-institute/PREVAIL/blob/main/DESCRIPTION)
 
 Hamlet A, Watson O (2026). *PREVAIL: PRojection of Epidemics and
-VAccination Impact under Lapses in Coverage*. R package version 0.2.0,
-<https://jameel-institute.github.io/PREVAIL/>.
+VAccination Impact under Lapses in Coverage*. R package version
+0.2.0.9000, <https://jameel-institute.github.io/PREVAIL/>.
 
     @Manual{,
       title = {PREVAIL: PRojection of Epidemics and VAccination Impact under Lapses in Coverage},
       author = {Arran Hamlet and Oliver J. Watson},
       year = {2026},
-      note = {R package version 0.2.0},
+      note = {R package version 0.2.0.9000},
       url = {https://jameel-institute.github.io/PREVAIL/},
     }
